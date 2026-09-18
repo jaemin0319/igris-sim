@@ -25,8 +25,8 @@ from isaacsim.core.utils.viewports import set_camera_view
 from pxr import Gf, Sdf, UsdGeom, UsdLux, UsdPhysics
 world = World(stage_units_in_meters=1.0, physics_dt=1.0 / 200.0, rendering_dt=1.0 / 50.0); stage = omni.usd.get_context().get_stage()
 GroundPlane(prim_path="/World/Ground", size=20.0, color=np.array([0.45, 0.45, 0.45]))          # 로컬 생성(에셋 서버 다운로드 없음)
-UsdLux.DomeLight.Define(stage, Sdf.Path("/World/DomeLight")).CreateIntensityAttr(800.0)
-sun = UsdLux.DistantLight.Define(stage, Sdf.Path("/World/Sun")); sun.CreateIntensityAttr(2500.0); UsdGeom.Xformable(sun).AddRotateXYZOp().Set(Gf.Vec3f(-50.0, 20.0, 0.0))
+UsdLux.DomeLight.Define(stage, Sdf.Path("/World/DomeLight")).CreateIntensityAttr(400.0)
+sun = UsdLux.DistantLight.Define(stage, Sdf.Path("/World/Sun")); sun.CreateIntensityAttr(1200.0); UsdGeom.Xformable(sun).AddRotateXYZOp().Set(Gf.Vec3f(-50.0, 20.0, 0.0))
 robot_prim = add_reference_to_stage(usd_path=USD, prim_path="/World/IGRIS_C")                    # 원본 USD는 reference만(읽기 전용)
 xf = UsdGeom.Xformable(robot_prim); ops = {o.GetOpName(): o for o in xf.GetOrderedXformOps()}
 (ops.get("xformOp:translate") or xf.AddTranslateOp()).Set(Gf.Vec3d(0.0, 0.0, 0.961))           # 공식 init_state pos

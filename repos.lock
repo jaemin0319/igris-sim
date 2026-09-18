@@ -1,0 +1,10 @@
+# 외부 저장소 고정(restore: scripts/01_clone_sources.sh). 형식: <dir> <url> <commit>
+GMR https://github.com/robrosinc/GMR.git d6e049de975d646ff6155f5758e041be685d0001
+XRoboToolkit-PC-Service-Pybind https://github.com/YanjieZe/XRoboToolkit-PC-Service-Pybind.git 75cb1130ac63e76d8f7e7788049be415e8be44f2
+XRoboToolkit-PC-Service https://github.com/XR-Robotics/XRoboToolkit-PC-Service.git 85bac4dbc1fd5cef42c74a160d9c30aa3491f122
+igris_c_description_public https://github.com/robrosinc/igris_c_description_public.git 784616e20a273a7a460689c11b83fd728e53100c
+igris_c_gmt_public https://github.com/robrosinc/igris_c_gmt_public.git 990cdad89aa0ceaae84c490eb7b4125d99d06e8f
+igris_c_isaacsim_public https://github.com/robrosinc/igris_c_isaacsim_public.git b53e4249faadd4d494890b40d30ed58a9b9d90de
+igris_c_sdk_public https://github.com/robrosinc/igris_c_sdk_public.git d13565bbb85400c0539367f6bf9a01b4533f3094
+igris_c_isaacsim_public/third_party/IsaacLab https://github.com/isaac-sim/IsaacLab.git f4aa17f87e2e5db5484f0b5974918573e8918ce2
+vla-repro https://github.com/jaemin0319/vla-repro.git ca375dbca56ee9b627a52900566bca9845850020

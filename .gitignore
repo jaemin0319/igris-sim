@@ -1,0 +1,32 @@
+# 재현 대상이 아닌 것: 외부 소스(클론), 설치본, 캐시, 대용량 자산, 산출물, 로그
+/src/
+/envs/
+/opt/
+/downloads/
+/build/
+/data/
+/logs/
+/ros2_ws/
+/assets/
+*.usd
+*.usdc
+*.usdz
+*.onnx
+*.pt
+*.npz
+*.pkl
+*.mp4
+*.deb
+*.whl
+*.tgz
+*.zip
+*.enc
+*.gpg
+*.age
+# 비밀정보
+.env
+*.key
+*.pem
+*token*
+hosts.yml
+__pycache__/

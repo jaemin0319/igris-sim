@@ -1,0 +1,25 @@
+absl-py==2.5.0
+etils==1.14.0
+flatbuffers==25.12.19
+fsspec==2026.7.0
+glfw==2.10.2
+igris_c_sdk @ file:///home/jammin/igris_ws/src/igris_c_sdk_public/dist/igris_c_sdk-2.1.0.post2-py3-none-any.whl#sha256=76767e63853e8575df6be286fe2f1c6fd806d2e477e76142f077c5cd7dae1a1d
+ImageIO==2.37.4
+imageio-ffmpeg==0.6.0
+ml_dtypes==0.6.0
+mujoco==3.2.7
+numpy==2.5.3
+onnx==1.22.0
+onnxruntime==1.30.0
+packaging @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_packaging_1785888127/work
+pillow==12.3.0
+protobuf==7.36.2
+psutil==7.2.2
+PyOpenGL==3.1.10
+PyYAML==6.0.3
+setuptools==84.0.0
+typing_extensions==4.16.0
+uv==0.5.21
+wheel==0.48.0
+xacro==2.1.1
+zipp==4.1.0

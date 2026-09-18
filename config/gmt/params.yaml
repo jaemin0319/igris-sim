@@ -1,0 +1,62 @@
+igris_c_gmt_public:
+  robot:
+    # CycloneDDS domain and namespace for IGRIS-C LowState/LowCmd.
+    # CLI --domain-id and --namespace override these values.
+    domain_id: 77
+    namespace: "igris_c_SIMTEST"
+    cyclonedds_xml_path: "/home/jammin/igris_ws/config/cyclonedds_loopback.xml"
+
+  loop:
+    # control_hz: main DDS state/publish loop.
+    # policy_hz: worker thread observation/inference/action rate.
+    # control_hz must be divisible by policy_hz.
+    control_hz: 300
+    policy_hz: 50
+
+  observation:
+    # Relative to this params.yaml unless absolute.
+    config_path: "obs.yaml"
+
+  action:
+    # Relative to this params.yaml unless absolute.
+    config_path: "action.yaml"
+
+  motion_source:
+    # type:
+    #   ros2: live GMR retarget frame over ROS 2
+    #   onnx_replay: recorded motion ONNX replay
+    #   csv_replay: CSV replay
+    #   null: no motion source; policy worker waits
+    type: "onnx_replay"
+    # Used when type == csv_replay.
+    csv_path: ""
+    # Used when type == onnx_replay. Also used as recorded fallback source in ros2 mode.
+    onnx_path: "/home/jammin/igris_ws/src/igris_c_gmt_public/data/onnx/recorded_walk_4.onnx"
+    # Used when type == ros2.
+    ros_config_path: "ros.yaml"
+    # Used by CSV replay and as fallback if motion ONNX metadata has no motion_fps.
+    fps: 50.0
+    # Live ROS motion frames older than this are treated as stale.
+    frame_timeout_ms: 100
+    # For replay sources: true wraps to the first frame; false holds the last frame.
+    loop: true
+
+  policy:
+    # Policy ONNX file. Input names must match obs.yaml group names.
+    onnx_path: "/home/jammin/igris_ws/src/igris_c_gmt_public/models/wbc_teleop/student_126.onnx"
+
+  filters:
+    # Low-pass filter cutoffs for observation velocities. Set <= 0 to disable.
+    q_dot_lpf_cutoff_hz: 16.0
+    imu_ang_vel_lpf_cutoff_hz: 50.0
+    reference_joint_velocity_lpf_cutoff_hz: 8.0
+    reference_anchor_linear_velocity_lpf_cutoff_hz: 8.0
+    reference_anchor_angular_velocity_lpf_cutoff_hz: 8.0
+
+  logging:
+    enabled: true
+    # Set from params only. Relative paths are resolved from this params.yaml.
+    csv_path: "/home/jammin/igris_ws/data/gmt_logs/infer_onnx_replay.csv"
+    # false: log every successful inference. true: log only when
+    # rt/robotstate is ROBOT_STATE_LOW or ROBOT_STATE_WALK_LOW.
+    only_low_command_mode: false

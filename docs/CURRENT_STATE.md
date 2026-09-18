@@ -2,6 +2,28 @@
 
 판정: PASS / FAIL / BLOCKED / NOT TESTED. 로그: `~/igris_ws/logs/`.
 
+## 3차 갱신(2026-09-18) — 목표 재정의: 기존 시뮬 환경 + IGRIS-C
+
+**목표**: 기존 G1 시뮬레이션의 *환경만* 가져와 G1 자리에 공식 IGRIS-C 1대를 reference로 배치하고, 화면 표시·자산 누락·충돌/기본 물리 실행을 확인. 제어기 없는 균형 유지는 성공 기준이 아님. 빈 장면은 설치 확인용일 뿐 최종 산출물이 아님.
+범위 밖: G1 Python 환경·IK·BrainCo·Unitree DDS·Vision Pro 복원, 로봇 탑재 카메라, teleop, 학습, DDS 신규 구현.
+
+### 과거 작업 이력 (사용자 제공 — 이 PC에서 **미검증**)
+- Unitree G1 29DoF + BrainCo Revo2 손을 Isaac Sim에서 사용. Vision Pro → xr_teleoperate → 좌표 변환 → G1 팔 IK·손가락 retargeting → Unitree DDS → 시뮬레이터.
+- 양팔·양손 teleop, 키보드 locomotion 동작(현재 백업에서의 재현 여부는 재확인 필요).
+- 머리·양 손목 카메라, 브래킷, 로봇 외형, 주변 물체 표시·색상 수정.
+- 교훈: 로봇 USD를 fixed-base로 Bake/Flatten하다 물리 구조가 손상돼 침강 → 정상 Wholebody USD 물리를 유지하고 외형만 별도 레이어로 해결. **이번에도 로봇 물리를 훼손하는 일괄 변환 금지**(IGRIS는 공식 USD를 reference로만 사용).
+- 향후 입력 장치: PICO 4 Ultra + 트래커(모델·개수·부착 위치 미확정 — 가정 금지). PICO/XRoboToolkit → GMR/GMT → IGRIS 제어·기록은 추후.
+
+### 확인한 사실 (이 PC에서 직접 확인)
+- GitHub 로그인 계정 `jaemin0319`(API 확인). 새 비공개 저장소 https://github.com/jaemin0319/igris-sim 생성·첫 push(`ccac999`).
+- `jaemin0319/vla-repro`@`ca375db`(비공개, 복구 지침·체크섬 전용, 76KB)를 `src/vla-repro`에 클론. AGENTS.md 규칙: G1 복원 트리 무변경, 암호는 로컬 pinentry로만, IGRIS는 별도 작업 루트.
+- 기존 장면의 실체: `unitree_sim_isaaclab` 태스크 `Isaac-PickPlace-Cylinder-G129-Dex1-Joint`(recovery-plan.json `runtime.baseline_task`). 단일 USD 스테이지가 아니라 **Python 장면 설정이 방(warehouse)·PackingTable·소품 USD를 조합**하는 구조(상류 공개 코드 `tasks/common_scene/base_scene_pickplace_cylindercfg.py`로 구조 확인; 사용자 수정본은 스냅샷 안).
+- 자산 위치: 비공개 Release `vla-recovery-private`의 `snapshot-g1-20260914-E0FK4Q`(GPG 대칭 AES256, 22파트 22.78GB 단일 tar.zst) 안 `vla_ws/repos/unitree_sim_isaaclab/assets/objects/…`, 그리고 공식 Isaac Sim 5.0 USD 보충본 `usd-supplement-20260915`(276MB). 전체 G1 복원은 150GB 요구 → 수행하지 않음.
+- 확보 방식: `scripts/30_fetch_vla_scene.sh`(download → SHA-256 검증 → 스트리밍 복호화로 장면 경로만 선택 추출, 평문 아카이브 미저장, 작업 루트 `/mnt/isaac/vla-scene`).
+
+---
+(이하 2차 갱신 기록)
+
 ## 현재 목표(축소)
 
 **Isaac Sim 최소 장면에 IGRIS-C 1대를 불러와 화면 표시 + 기본 물리 실행 확인**까지.

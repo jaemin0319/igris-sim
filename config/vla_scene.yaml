@@ -1,0 +1,78 @@
+# 기존 G1 시뮬 환경(Isaac-PickPlace-Cylinder-G129-Dex1-Joint)의 '환경만' + 공식 IGRIS-C.
+# 값은 아래 provenance의 사용자 최종 설정 파일에서 그대로 옮겨 적었다(수정본 기준, 상류 공개본 아님). 원본·백업은 읽기 전용.
+provenance:
+  snapshot_release: jaemin0319/vla-recovery-private@snapshot-g1-20260914-E0FK4Q   # GPG 암호화, vla-repro@ca375db 의 체크섬으로 검증
+  baseline_task: Isaac-PickPlace-Cylinder-G129-Dex1-Joint                           # vla-repro recovery-plan.json runtime.baseline_task, vla_ws/CLAUDE.md
+  source_files_sha256:
+    tasks/common_scene/base_scene_pickplace_cylindercfg.py: 01ae5efd542990a53b51fbe6a927a476ac9adb6dc5e8002cc269ae473c0a3519
+    tasks/g1_tasks/pick_place_cylinder_g1_29dof_dex1/pickplace_cylinder_g1_29dof_dex1_joint_env_cfg.py: 71c3f58e1b51c03d988942554f1eaffd8bab12ebd5f23cb141d870761b57b8c8
+    tasks/common_config/robot_configs.py: b0b7d80fdb09dabb6d3cf9dac6146461c8b74edc6803a332a17bf7a3f06ef52f
+    assets/objects/PackingTable/PackingTable.usd: 3c723445cffdaa837fd8a24bdf446e966ca2aba18ad49ed15d45d0facd4602ec
+    assets/props/ycb/025_mug/025_mug_physics_local.usd: da0a19666c5ab702e175a6bace4fa061ff1530ab392cf6a3da220b95b6d26f9f
+  notes:
+    - 최종 설정에서 Room(warehouse)·추가 PackingTable 2~6은 주석/비활성 → 이 장면에도 넣지 않음(USD 보충본 불필요).
+    - 최종 env cfg는 world_camera=None, 로봇 탑재 카메라(front/eye/wrist)는 G1 종속 → 이번 범위에서 제외.
+roots:
+  vla: ${VLA_ROOT:-/mnt/isaac/vla-scene}/extracted/snapshot/source/home/jammin/vla_ws/repos/unitree_sim_isaaclab
+  igris: ~/igris_ws/src/igris_c_isaacsim_public/source/robros_lab/robros_lab/assets/robots/robros/igris_c/from_urdf/usd
+  isaac_root: ${ISAAC_ROOT:-/mnt/isaac}
+ground:            # GroundPlaneCfg(size=(10,10), color=(0.04,0.04,0.04)) — Isaac Lab은 공식 Grid/default_environment.usd를 쓴다
+  prim: /World/GroundPlane
+  size: [10.0, 10.0]
+  color: [0.04, 0.04, 0.04]
+  mode: lab_grid   # 공식 에셋 서버 접근 실패 시 같은 크기·색의 로컬 평면으로 대체하고 결과 JSON에 기록
+environment:
+  - prim: /World/envs/env_0/PackingTable
+    usd: ${vla}/assets/objects/PackingTable/PackingTable.usd
+    pos: [0.0, 0.55, -0.2]
+    rot: [1.0, 0.0, 0.0, 0.0]
+    kinematic: true
+    visual_material: {diffuse: [0.9, 0.9, 0.9], metallic: 0.0, roughness: 0.65}   # "Visual-only table override"
+  - prim: /World/envs/env_0/Object            # YCB 025 mug (동적 강체)
+    usd: ${vla}/assets/props/ycb/025_mug/025_mug_physics_local.usd
+    pos: [-0.20, 0.27, 0.8657]
+    rot: [0.70710678, -0.70710678, 0.0, 0.0]
+primitives:        # VISUAL BACKDROP: 시각 전용(충돌·강체 없음), 회색 0.5, roughness 1.0
+  - {prim: /World/envs/env_0/BackdropBack,  type: cuboid, size: [10.0, 0.05, 3.0], pos: [0.0, -5.0, 1.5], collision: false, rigid: false, visual_material: {diffuse: [0.5, 0.5, 0.5], metallic: 0.0, roughness: 1.0}}
+  - {prim: /World/envs/env_0/BackdropFront, type: cuboid, size: [10.0, 0.05, 3.0], pos: [0.0, 5.0, 1.5],  collision: false, rigid: false, visual_material: {diffuse: [0.5, 0.5, 0.5], metallic: 0.0, roughness: 1.0}}
+  - {prim: /World/envs/env_0/BackdropLeft,  type: cuboid, size: [0.05, 10.0, 3.0], pos: [-5.0, 0.0, 1.5], collision: false, rigid: false, visual_material: {diffuse: [0.5, 0.5, 0.5], metallic: 0.0, roughness: 1.0}}
+  - {prim: /World/envs/env_0/BackdropRight, type: cuboid, size: [0.05, 10.0, 3.0], pos: [5.0, 0.0, 1.5],  collision: false, rigid: false, visual_material: {diffuse: [0.5, 0.5, 0.5], metallic: 0.0, roughness: 1.0}}
+lights:
+  - {prim: /World/light, type: dome, intensity: 3000.0, color: [0.75, 0.75, 0.75]}
+g1_slot:           # G1RobotPresets.g1_29dof_brainco_base_fix 기본값(고정 베이스 골반 높이 0.76). 이 레이어에서는 비활성 prim으로만 기록
+  prim: /World/envs/env_0/Robot
+  pos: [-0.15, 0.0, 0.76]
+  rot: [0.7071, 0.0, 0.0, 0.7071]
+  usd: "(not loaded) G1 29dof + BrainCo fixed-base preset USD in the preserved snapshot"
+igris:
+  prim: /World/envs/env_0/IGRIS_C
+  usd: ${igris}/extras/wrist_hand_independent/igris_c.usd        # 공식 ArticulationCfg(IGRIS_C_WRIST_HAND_INDEPENDENT_CFG)가 쓰는 변형
+  standing_base_height: 0.961   # 공식 init_state pos z (아래 init_joint_pos 자세에서 발바닥이 z=0) — G1의 0.76을 복사하지 않음
+  clearance: 0.01
+  raycast_from_above: 0.3       # g1_slot z + 0.3 에서 아래로 raycast → 바닥 z
+  xy_offset: [0.0, 0.0]         # 초기 겹침이 있으면 결과 JSON의 overlap을 근거로만 조정
+  yaw_offset_deg: 0.0
+  init_joint_pos:               # robros.py init_state.joint_pos
+    ".*_Hip_Pitch_.*": -0.2
+    ".*_Knee_Pitch_.*": 0.3
+    ".*_Ankle_Pitch_.*": -0.15
+    ".*_Shoulder_Pitch_(Left|Right)": 0.13
+    ".*_Shoulder_Roll_Left": 0.13
+    ".*_Shoulder_Roll_Right": -0.13
+    ".*_Elbow_Pitch_(Left|Right)": -0.3
+  pd_gains:                     # robros.py 공식 actuator stiffness/damping → PhysX 위치 드라이브(자세 유지용; 균형 제어기 아님)
+    ".*Hip_Pitch.*|.*Knee.*": [118.435253, 15.079645]
+    ".*Hip_Roll.*": [122.136354, 10.367256]
+    ".*Hip_Yaw.*|.*Waist_Yaw.*|.*_Shoulder_.*|.*_Elbow_.*": [121.514570, 6.077864]
+    ".*Waist_Roll.*": [660.634418, 34.67]
+    ".*Waist_Pitch.*": [230.579719, 12.10]
+    ".*Ankle_Pitch.*": [93.373568, 14.863025]
+    ".*Ankle_Roll.*": [77.634366, 12.355893]
+scene_camera:      # 장면 관찰용 기본 카메라. eye는 부모 장면 cfg의 world_camera pos_offset(최종 env cfg에서는 None으로 비활성)
+  prim: /World/SceneCamera
+  eye: [-0.1, 3.6, 1.6]
+  target: [-0.15, 0.2, 0.85]
+  focal_length: 18.0
+extra_views:       # 스크린샷 전용 시점
+  - {name: diag, eye: [2.4, -1.8, 1.9], target: [-0.15, 0.25, 0.8]}
+  - {name: side, eye: [2.8, 0.3, 1.1], target: [-0.15, 0.2, 0.8]}

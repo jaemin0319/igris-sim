@@ -11,7 +11,8 @@ for size, name, typ in parse(f"{root}/snapshot.filelist"):
     tot += size; n += 1
     for p in pats:
         if fnmatch.fnmatch(name, p): per[p][0] += size; per[p][1] += 1; sel += size; seln += 1; big.append((size, name)); break
-supp = sum(s for s, _, _ in parse(f"{root}/supplement.filelist"))
+import os
+supp = sum(s for s, _, _ in parse(f"{root}/supplement.filelist")) if os.path.exists(f"{root}/supplement.filelist") else 0
 out = {"archive_entries": n, "archive_plain_bytes": tot, "selected_entries": seln, "selected_bytes": sel, "supplement_bytes": supp, "per_pattern": {p: {"bytes": b, "entries": c} for p, (b, c) in per.items()},
        "largest_selected": [{"bytes": b, "name": nm} for b, nm in sorted(big, reverse=True)[:12]]}
 json.dump(out, open(f"{root}/selection.json", "w"), indent=1)

@@ -14,7 +14,7 @@ Ubuntu 24.04 x86_64 · NVIDIA 580 드라이버 · ROS 2 Jazzy · Isaac Sim 5.1.0
 ## 새 PC에서 복원
 
 ```bash
-git clone https://github.com/<account>/igris-sim.git ~/igris_ws && cd ~/igris_ws
+git clone https://github.com/jaemin0319/igris-sim.git ~/igris_ws && cd ~/igris_ws
 # 0) micromamba(사용자 공간) — docs/SETUP.md §3 참조. tools 환경(git, cmake, gh, redis) 생성
 # 1) 외부 저장소를 고정 커밋으로 복원
 bash scripts/01_clone_sources.sh
@@ -23,12 +23,23 @@ sudo bash scripts/00_sudo_install.sh
 # 3) Python 환경(sdk/gmr) — docs/SETUP.md §3, docs/pip_freeze_*.txt
 # 4) 자산 체크섬 검증
 bash scripts/02_assets_manifest.sh verify
-# 5) Isaac Sim 5.1.0 (별도 ext4 권장, 여유 ≥22GB). 공간 검사를 통과해야만 다운로드
+# 5) Isaac Sim 5.1.0 (별도 ext4 권장, 여유 ≥22GB; 설치본 17GB). 공간 검사를 통과해야만 다운로드
 ISAAC_ROOT=/mnt/isaac bash scripts/20_install_isaac.sh
-# 6) IGRIS-C 1대 로딩 + 물리 (GUI) / headless
-bash scripts/run_isaac_igris.sh --secs 5 --hold 60
-bash scripts/run_isaac_igris.sh --headless --secs 5
+# 6) 기존 G1 시뮬 '환경' 자산 확보(비공개 Release 접근 권한 + 복호화 암호 필요, 암호는 pinentry 창에만 입력)
+#    download: 23.1GB 받기+SHA-256 검증 → list: 스트리밍 복호화로 목록·크기 산정 → extract: 장면 자산·배치 설정만 1.2GB 추출
+bash scripts/30_fetch_vla_scene.sh download && bash scripts/30_fetch_vla_scene.sh list && bash scripts/30_fetch_vla_scene.sh extract
+bash scripts/30_fetch_vla_scene.sh forget            # gpg-agent 메모리의 암호 캐시 제거
+bash scripts/02_assets_manifest.sh verify            # 추출 자산 포함 84개 SHA-256 대조
+# 7) 기존 환경 + IGRIS-C 1대 (GUI, 5초 물리 후 초기 배치로 되돌려 창 유지)
+bash scripts/run_igris_vla_scene.sh --secs 5 --hold 3600
+#    설치 확인용 빈 장면: bash scripts/run_isaac_igris.sh --secs 5 --hold 60
 ```
+
+## 기준 화면(이 PC에서 실제 실행한 결과)
+
+![existing environment + IGRIS-C](docs/img/igris_vla_scene_init_diag.jpg)
+
+초기 배치(물리 시작 전). 제어기가 없으므로 물리를 재생하면 로봇은 1–2초 내에 넘어진다(정상 범주).
 
 ## 구성
 
@@ -39,11 +50,12 @@ bash scripts/run_isaac_igris.sh --headless --secs 5
 | `docs/` | SETUP, CURRENT_STATE, pip freeze | 포함 |
 | `repos.lock`, `assets.sha256` | 외부 저장소 커밋, 자산 SHA-256 | 포함 |
 | `src/`, `envs/`, `opt/`, `downloads/`, `data/`, `logs/`, `ros2_ws/`, `build/` | 외부 소스·설치본·산출물 | **제외** |
-| `/mnt/isaac` | Isaac Sim 설치본·pip 임시·Kit 캐시·장면 파일 | 저장소 밖 |
+| `config/vla_scene.yaml` | 기존 장면 정의(배치·조명·재질·G1 자리·IGRIS 배치 규칙, 출처 sha256) | 포함 |
+| `/mnt/isaac` | Isaac Sim 설치본(`env`)·Kit 캐시·`vla-scene/{parts,extracted}`·생성 장면 `scenes/*.usda` | 저장소 밖 |
 
 ## 자산 출처·라이선스
 
 - IGRIS-C USD/URDF/정책: `robrosinc/*_public` 저장소(각 저장소 LICENSE 준수, 재배포하지 않고 커밋으로 참조).
 - LAFAN1 샘플 BVH: ubisoft-laforge-animation-dataset, CC BY-NC-ND 4.0(비상업 연구용, 재배포 안 함).
 - XRoboToolkit PC Service: XR-Robotics 릴리스 v1.0.0 deb.
-- 기존 시뮬 장면(`vla-repro`): 비공개 자산 — 접근 권한 확인 후 별도 보관, 복원 절차는 CURRENT_STATE 참조.
+- 기존 시뮬 환경: 비공개 Release `jaemin0319/vla-recovery-private@snapshot-g1-20260914-E0FK4Q`(GPG 암호화, 체크섬은 `jaemin0319/vla-repro@ca375db`). PackingTable·YCB 머그 등 제3자 자산(Unitree `unitree_sim_isaaclab`, YCB)이 포함되므로 재배포하지 않고 체크섬과 추출 스크립트만 기록한다. 바닥은 Isaac Sim 공식 에셋 서버의 `Grid/default_environment.usd`.

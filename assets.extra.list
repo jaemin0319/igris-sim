@@ -1,0 +1,6 @@
+# 기존 G1 시뮬 환경에서 실제로 사용하는 자산·설정(스냅샷에서 선택 추출, scripts/30_fetch_vla_scene.sh). 경로는 VLA_ROOT=/mnt/isaac/vla-scene 기준
+/mnt/isaac/vla-scene/extracted/snapshot/source/home/jammin/vla_ws/repos/unitree_sim_isaaclab/assets/objects/PackingTable
+/mnt/isaac/vla-scene/extracted/snapshot/source/home/jammin/vla_ws/repos/unitree_sim_isaaclab/assets/props/ycb/025_mug
+/mnt/isaac/vla-scene/extracted/snapshot/source/home/jammin/vla_ws/repos/unitree_sim_isaaclab/tasks/common_scene/base_scene_pickplace_cylindercfg.py
+/mnt/isaac/vla-scene/extracted/snapshot/source/home/jammin/vla_ws/repos/unitree_sim_isaaclab/tasks/g1_tasks/pick_place_cylinder_g1_29dof_dex1/pickplace_cylinder_g1_29dof_dex1_joint_env_cfg.py
+/mnt/isaac/vla-scene/extracted/snapshot/source/home/jammin/vla_ws/repos/unitree_sim_isaaclab/tasks/common_config/robot_configs.py

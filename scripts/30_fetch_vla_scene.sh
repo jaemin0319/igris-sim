@@ -2,6 +2,7 @@
 # 기존 G1 시뮬 장면 자산만 확보(전체 G1 복원 아님). vla-repro의 체크섬으로 검증, 원본 Release/복원 트리 무변경.
 #   30_fetch_vla_scene.sh download   : Release 파트(22.8GB)+USD 보충본(276MB) 다운로드·SHA-256 검증  → $VLA_ROOT/parts
 #   30_fetch_vla_scene.sh list       : 스트리밍 복호화로 tar 목록만 생성(평문 아카이브를 디스크에 쓰지 않음) → $VLA_ROOT/snapshot.filelist
+#   30_fetch_vla_scene.sh supplement : (선택) USD 보충본 추출 → $VLA_ROOT/supplement. 끝나면 'forget'으로 암호 캐시 제거
 #   30_fetch_vla_scene.sh extract    : 장면 관련 경로만 선택 추출                                       → $VLA_ROOT/extracted
 # 암호는 pinentry(GUI 창)로만 입력한다. 인자·환경변수·로그에 남기지 않는다.
 set -euo pipefail
@@ -26,14 +27,14 @@ case "${1:-}" in
     want=$(python3 -c "import json;print(json.load(open('$REPRO/recovery-plan.json'))['usd_supplement']['cipher_sha256'])")
     [ "$(sha256sum "$PARTS"/g1-usd-supplement-20260915.tar.zst.gpg | cut -d' ' -f1)" = "$want" ] && echo "usd supplement: OK" || { echo "usd supplement: SHA MISMATCH"; exit 4; } ;;
   list)    gpg_setup; cat_parts | gpg_stream | zstd -dc | tar -tvf - > "$VLA_ROOT/snapshot.filelist"
-           gpg_stream < "$PARTS/g1-usd-supplement-20260915.tar.zst.gpg" | zstd -dc | tar -tvf - > "$VLA_ROOT/supplement.filelist"
            python3 "$IGRIS_WS/scripts/31_vla_select.py" "$VLA_ROOT" "${PATTERNS[@]}" ;;
   extract) gpg_setup; [ -s "$VLA_ROOT/selection.json" ] || { echo "먼저 list를 실행"; exit 1; }
            need=$(python3 -c "import json;d=json.load(open('$VLA_ROOT/selection.json'));print(int((d['selected_bytes']+d['supplement_bytes'])*1.1/2**30)+5)")
            free=$(df -BG --output=avail "$VLA_ROOT" | tail -n1 | tr -dc 0-9); [ "$free" -ge "$need" ] || { echo "BLOCKED: 추출에 ${need}GB 필요, 여유 ${free}GB"; exit 3; }
            cat_parts | gpg_stream | zstd -dc | tar -xf - -C "$VLA_ROOT/extracted" --wildcards "${PATTERNS[@]}" || echo "WARN: tar rc=$? (일부 패턴 무일치 가능)"
-           gpg_stream < "$PARTS/g1-usd-supplement-20260915.tar.zst.gpg" | zstd -dc | tar -xf - -C "$VLA_ROOT/extracted"
-           gpg_forget; du -sh "$VLA_ROOT/extracted"; echo "usd files: $(find "$VLA_ROOT/extracted" -name '*.usd*' | wc -l)" ;;
+           du -sh "$VLA_ROOT/extracted"; echo "usd files: $(find "$VLA_ROOT/extracted" -name '*.usd*' | wc -l)" ;;
+  supplement) # 공식 Isaac Sim 5.0 USD 보충본(별도 암호화). 기준 장면에는 불필요(required_for_current_fixed_base_baseline=false)
+           gpg_setup; mkdir -p "$VLA_ROOT/supplement"; gpg_stream < "$PARTS/g1-usd-supplement-20260915.tar.zst.gpg" | zstd -dc | tar -xf - -C "$VLA_ROOT/supplement"; du -sh "$VLA_ROOT/supplement" ;;
   forget)  gpg_forget; echo "gpg-agent 종료(암호 캐시 제거)" ;;
-  *) echo "usage: $0 download|list|extract|forget"; exit 1 ;;
+  *) echo "usage: $0 download|list|extract|supplement|forget"; exit 1 ;;
 esac

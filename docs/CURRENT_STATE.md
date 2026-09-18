@@ -1,6 +1,42 @@
-# CURRENT STATE — 2026-09-18 (2차 갱신, 범위 축소 후)
+# CURRENT STATE — 2026-09-18 (4차 갱신: 기존 환경 + IGRIS-C 장면 실행)
 
-판정: PASS / FAIL / BLOCKED / NOT TESTED. 로그: `~/igris_ws/logs/`.
+판정: PASS / FAIL / BLOCKED / NOT TESTED. 로그: `~/igris_ws/logs/`, 결과 JSON·스크린샷: `~/igris_ws/data/isaac/`.
+
+## 이번 목표 결과 — 기존 G1 시뮬 환경에 공식 IGRIS-C 1대
+
+실행 명령(하나): `bash ~/igris_ws/scripts/run_igris_vla_scene.sh --secs 5 --hold 3600`
+
+| 항목 | 판정 | 근거 |
+| --- | --- | --- |
+| Isaac Sim 5.1.0 설치(`/mnt/isaac/env`, 17GB, 루트 영향 없음) | PASS | logs/50_isaac_install.log |
+| 설치 확인용 빈 장면: IGRIS 로딩(51 DOF)·5초 물리·GUI 창 | PASS (최종 산출물 아님) | logs/70·71, data/isaac/igris_min_scene_*.json |
+| 스냅샷 22파트+보충본 다운로드, SHA-256 | PASS (23/23) | logs/63_vla_scene_download.log |
+| 스트리밍 복호화·목록(431,334 항목 = 매니페스트 일치, 평문 62.4GiB 미저장) | PASS | logs/64, /mnt/isaac/vla-scene/selection.json |
+| 선택 추출(720항목 1.16GiB: 장면 자산+배치 설정) · 암호 캐시 제거 | PASS | logs/66_vla_scene_extract.log |
+| USD 보충본 복호화 | FAIL(`Bad session key`) → **불필요로 판정**: 최종 장면은 Room/warehouse 비활성, 매니페스트도 `required_for_current_fixed_base_baseline=false` | logs/64 |
+| 최종 사용 장면 식별: `Isaac-PickPlace-Cylinder-G129-Dex1-Joint`의 사용자 수정 cfg(작업대 1·머그·바닥·배경판 4·돔 조명; Room·추가 작업대·world_camera 비활성) | PASS(파일 확인) | config/vla_scene.yaml `provenance` |
+| 장면 구성: 환경 USD reference + 재질/kinematic override, G1 자리 비활성 prim, IGRIS reference | PASS | /mnt/isaac/scenes/igris_in_vla_scene.usda |
+| 자산 누락: 의존성 9 레이어/29 자산, **unresolved 0, 누락 reference 0** | PASS | data/isaac/igris_vla_scene_gui2.json |
+| 로봇 위치·방향: G1 자리 (−0.15, 0), yaw 90°(작업대 방향) | PASS | 〃 `placement` |
+| 발 높이: 바닥 raycast z=0.0 → base z=0.971, **발바닥−바닥 = +7.5mm**(박힘 없음) | PASS | 〃 `initial_check` |
+| 초기 겹침: 로봇 전체 AABB는 작업대 AABB와 y 2.7cm 겹치나, **링크(56)×작업대 메시(24) 단위 겹침 0건**, 머그와 겹침 없음, 첫 스텝 관절속도 0(밀어내기 반발 없음) | PASS | 〃 `initial_check_link_level` |
+| GUI 표시·스크린샷(정면/대각/측면/물리 후) | PASS | data/isaac/igris_vla_scene_gui2_*.png, logs/73 |
+| 기본 물리 5초: 전 구간 유한값, 기립 중 바닥 관통 없음, 베이스 침강 지속 없음, 작업대(kinematic) 불변, 머그는 작업대 위에 안착(2.4cm 내려앉음), RTF 1.84 | PASS | 〃 `physics` |
+| **균형 유지** | **유지 안 됨(성공 기준 아님)**: 제어기 없이 초기자세 PD만 → 약 1–2초에 넘어져 바닥에 정지 | 〃 `balance_observation` |
+| VRAM 최대 2.9–3.4GB / 8GB | 관찰값(공식 최소 16GB는 미충족) | 〃 `vram_mib` |
+
+관찰 메모: 넘어진 뒤 `Link_Waist_Pitch`의 시각 메시 AABB가 바닥 아래 3cm까지 내려간 채 정지(충돌 형상이 단순화된 영향으로 보임, 침강 아님). IGRIS USD는 재질 색이 없어 흰색으로 표시됨(공식 자산 그대로).
+
+### 미검증 / 범위 밖
+- 균형 제어·보행·teleop·PICO 연결·DDS 연동, G1 탑재 카메라/손/브래킷 이식, Isaac Lab 기반 실행(설치 안 함).
+- Isaac Lab이 같은 cfg로 만든 원래 화면과의 픽셀 단위 동일성(이 PC에서 원본 G1 장면을 실행한 적 없음). 구성값은 cfg에서 옮겼으나 Lab의 GroundPlane 물리 재질 등 세부 기본값은 대조하지 않음.
+- 새 PC에서 README 절차 전체의 일괄 재현(각 단계는 이 PC에서 개별 실행·확인).
+
+### 남은 결정
+- `/mnt/isaac/vla-scene/parts`(23.1GB)는 재다운로드 가능 — 삭제 여부는 사용자 결정(현재 보존).
+- `extracted`(1.2GB) 중 실제 사용은 PackingTable·025_mug·설정 3개(체크섬 기록). 나머지 추출분(small_warehouse 등)도 보존 중.
+
+---
 
 ## 3차 갱신(2026-09-18) — 목표 재정의: 기존 시뮬 환경 + IGRIS-C
 
@@ -15,7 +51,7 @@
 - 향후 입력 장치: PICO 4 Ultra + 트래커(모델·개수·부착 위치 미확정 — 가정 금지). PICO/XRoboToolkit → GMR/GMT → IGRIS 제어·기록은 추후.
 
 ### 확인한 사실 (이 PC에서 직접 확인)
-- GitHub 로그인 계정 `jaemin0319`(API 확인). 새 비공개 저장소 https://github.com/jaemin0319/igris-sim 생성·첫 push(`ccac999`).
+- GitHub 로그인 계정 `jaemin0319`(API 확인, gh 2.101.0 keyring). 새 비공개 저장소 https://github.com/jaemin0319/igris-sim 생성·첫 push(`ccac999`).
 - `jaemin0319/vla-repro`@`ca375db`(비공개, 복구 지침·체크섬 전용, 76KB)를 `src/vla-repro`에 클론. AGENTS.md 규칙: G1 복원 트리 무변경, 암호는 로컬 pinentry로만, IGRIS는 별도 작업 루트.
 - 기존 장면의 실체: `unitree_sim_isaaclab` 태스크 `Isaac-PickPlace-Cylinder-G129-Dex1-Joint`(recovery-plan.json `runtime.baseline_task`). 단일 USD 스테이지가 아니라 **Python 장면 설정이 방(warehouse)·PackingTable·소품 USD를 조합**하는 구조(상류 공개 코드 `tasks/common_scene/base_scene_pickplace_cylindercfg.py`로 구조 확인; 사용자 수정본은 스냅샷 안).
 - 자산 위치: 비공개 Release `vla-recovery-private`의 `snapshot-g1-20260914-E0FK4Q`(GPG 대칭 AES256, 22파트 22.78GB 단일 tar.zst) 안 `vla_ws/repos/unitree_sim_isaaclab/assets/objects/…`, 그리고 공식 Isaac Sim 5.0 USD 보충본 `usd-supplement-20260915`(276MB). 전체 G1 복원은 150GB 요구 → 수행하지 않음.
@@ -65,7 +101,7 @@
 | **폐루프 제어**(LowCmd→PD 토크→물리→LowState) | NOT TESTED | 지금까지의 MuJoCo 시험은 **상태 발행 전용**(고정 베이스, LowCmd 미반영, 개루프). GMT 출력 크기는 추종 성능 지표 아님 |
 | 정책 추종 성능·학습 시 의미 일치(게인 포함) | NOT TESTED | Isaac(Lab) 폐루프 또는 실기 필요 |
 | PICO 실기기 스트림, Redis→ROS 브리지 실데이터 | BLOCKED(장비) / 보류 | |
-| Isaac Sim 설치·최소 장면·IGRIS 로딩 | BLOCKED(디스크 15GB < 22GB) | 아래 |
+| Isaac Sim 설치·최소 장면·IGRIS 로딩 | (2차 시점 BLOCKED → 4차에서 PASS, 상단 표 참조) | |
 | CUDA 연산(torch.cuda) | NOT TESTED | MODE=lab에서만 해당 |
 
 ## Isaac 최소 목표 — 공간 산정과 확보안

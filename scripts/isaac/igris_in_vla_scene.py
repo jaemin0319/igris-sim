@@ -6,12 +6,17 @@
   4) x,y,yaw는 G1 자리 기준, z = 바닥 raycast 높이 + IGRIS 공식 기립 높이(+여유) 로 재계산,
   5) 자산 누락·초기 겹침·발 높이 점검 → 수 초 물리 → 관통/유한성/VRAM 기록 → 다중 시점 스크린샷.
 실행: bash ~/igris_ws/scripts/run_igris_vla_scene.sh [--headless] [--secs 5] [--hold 600]
-제어기 없이 서 있는 것은 성공 기준이 아니다(넘어짐은 정상 범주, 바닥 관통·NaN·자산 누락이 실패)."""
+제어기 없이 서 있는 것은 성공 기준이 아니다(넘어짐은 정상 범주, 바닥 관통·NaN·자산 누락이 실패).
+골반 고정(기본 on)은 월드에 매단 지지 상태이며 균형 제어가 아니다. 끄기: --no-fix / --no-appearance."""
 import argparse, json, math, os, re, subprocess, sys, time
 ap = argparse.ArgumentParser()
 ap.add_argument("--headless", action="store_true"); ap.add_argument("--secs", type=float, default=5.0); ap.add_argument("--hold", type=float, default=0.0)
 ap.add_argument("--config", default=os.path.expanduser("~/igris_ws/config/vla_scene.yaml")); ap.add_argument("--tag", default="run")
 ap.add_argument("--out", default=os.path.expanduser("~/igris_ws/data/isaac")); ap.add_argument("--freeze", action="store_true", help="물리를 돌리지 않고 초기 배치만 표시")
+ap.add_argument("--fix", dest="fix", action="store_true", default=None, help="골반 고정 켬(기본: YAML igris.fix.enabled)"); ap.add_argument("--no-fix", dest="fix", action="store_false")
+ap.add_argument("--fix-link", default=None, help="고정할 링크: auto(=양쪽 Joint_Hip_Pitch의 부모, 골반) | root | 링크명")
+ap.add_argument("--appearance", dest="appearance", action="store_true", default=None); ap.add_argument("--no-appearance", dest="appearance", action="store_false")
+ap.add_argument("--arm-test", dest="arm_test", action="store_true", default=None, help="물리 중 팔 관절에 사인파 목표를 주어 움직임 확인")
 a = ap.parse_args(); os.makedirs(a.out, exist_ok=True)
 import yaml
 cfg = yaml.safe_load(open(a.config))
@@ -98,6 +103,12 @@ g1 = cfg["g1_slot"]; slot = stage.DefinePrim(g1["prim"], "Xform"); place(slot, g
 slot.SetCustomDataByKey("igris_sim:note", "original G1 instance slot; deactivated in this layer, asset not loaded"); slot.SetCustomDataByKey("igris_sim:original_usd", g1.get("usd", "")); slot.SetActive(False)
 ig = cfg["igris"]; IGRIS_USD = rp(ig["usd"]); assert os.path.isfile(IGRIS_USD), IGRIS_USD
 robot = stage.DefinePrim(ig["prim"], "Xform"); robot.GetReferences().AddReference(IGRIS_USD)
+FIX = ig.get("fix", {}); fix_on = FIX.get("enabled", True) if a.fix is None else a.fix; fix_link_sel = a.fix_link or FIX.get("link", "auto")
+APP = yaml.safe_load(open(os.path.expanduser(ig.get("appearance_config", "~/igris_ws/config/igris_appearance.yaml")))); app_on = APP.get("enabled", True) if a.appearance is None else a.appearance
+scene_dir = os.path.join(ROOTS.get("isaac_root", a.out), "scenes"); os.makedirs(scene_dir, exist_ok=True)
+def new_sublayer(name):  # 별도 override 레이어(파일) — 루트 장면 레이어의 subLayer. 원본 USD는 reference로만 쓰인다
+    path = os.path.join(scene_dir, name); os.path.exists(path) and os.remove(path); L = Sdf.Layer.CreateNew(path); stage.GetRootLayer().subLayerPaths.append(path); return L
+res["layers"] = {}
 w, x, y, z = [float(v) for v in g1["rot"]]; yaw = math.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z)) + math.radians(float(ig.get("yaw_offset_deg", 0.0))); qyaw = (math.cos(yaw / 2), 0.0, 0.0, math.sin(yaw / 2))
 gx, gy = float(g1["pos"][0]) + float(ig["xy_offset"][0]), float(g1["pos"][1]) + float(ig["xy_offset"][1])
 place(robot, (gx, gy, 50.0), qyaw)                                                                 # 바닥 측정 전까지 raycast 경로 밖에 둔다
@@ -113,20 +124,64 @@ res["missing_reference_files"] = missing_files
 world.reset(); sq = omni.physx.get_physx_scene_query_interface(); z_from = float(g1["pos"][2]) + float(ig.get("raycast_from_above", 0.3))
 hit = sq.raycast_closest((gx, gy, z_from), (0.0, 0.0, -1.0), 10.0); floor_z = float(hit["position"][2]) if hit.get("hit") else 0.0
 res["floor"] = {"raycast_from": [gx, gy, z_from], "hit": bool(hit.get("hit")), "collider": str(hit.get("collision", "")), "floor_z": round(floor_z, 4)}
+world.stop()                                                                                      # 바닥만 측정했으면 물리를 내리고(파싱 해제) 최종 배치·레이어 작성 후 다시 파싱한다
 stand = float(ig["standing_base_height"]); base_z = floor_z + stand + float(ig.get("clearance", 0.01)); place(robot, (gx, gy, base_z), qyaw)
+for _ in range(5): app.update()
+# ---- (레이어 1) 골반 고정: 현재 자세의 월드 포즈에 FixedJoint(world→link). 나머지 관절·강체·충돌은 그대로
+art_root_prim = [p for p in Usd.PrimRange(robot) if p.HasAPI(UsdPhysics.ArticulationRootAPI)][0]
+hips = [p for p in Usd.PrimRange(robot) if p.IsA(UsdPhysics.Joint) and re.fullmatch(r"Joint_Hip_Pitch_(Left|Right)", p.GetName())]
+hip_parents = sorted(set(UsdPhysics.Joint(h).GetBody0Rel().GetTargets()[0].name for h in hips)); pelvis_name = hip_parents[0] if len(hip_parents) == 1 else None
+res["root_body"] = {"articulation_root": art_root_prim.GetPath().pathString, "root_children_joints": [j.GetName() for j in Usd.PrimRange(art_root_prim) if j.IsA(UsdPhysics.Joint)][:6], "pelvis_link(parent of hip joints)": pelvis_name}
+fix_res = {"enabled": bool(fix_on)}
+if fix_on:
+    link_name = art_root_prim.GetName() if fix_link_sel == "root" else (pelvis_name if fix_link_sel == "auto" else fix_link_sel); link_prim = next(p for p in Usd.PrimRange(robot) if p.GetName() == link_name and p.HasAPI(UsdPhysics.RigidBodyAPI))
+    fixL = new_sublayer("igris_fix_pelvis.usda"); res["layers"]["fix"] = fixL.identifier
+    with Usd.EditContext(stage, Usd.EditTarget(fixL)):
+        M = UsdGeom.Xformable(link_prim).ComputeLocalToWorldTransform(Usd.TimeCode.Default()); Mt = M.RemoveScaleShear(); pos = Mt.ExtractTranslation(); rot = Mt.ExtractRotationQuat()
+        J = UsdPhysics.FixedJoint.Define(stage, link_prim.GetPath().AppendChild("WorldFixedJoint_igris_sim")); J.CreateBody1Rel().SetTargets([link_prim.GetPath()])
+        J.CreateLocalPos0Attr().Set(Gf.Vec3f(pos)); J.CreateLocalRot0Attr().Set(Gf.Quatf(rot.GetReal(), *rot.GetImaginary())); J.CreateLocalPos1Attr().Set(Gf.Vec3f(0, 0, 0)); J.CreateLocalRot1Attr().Set(Gf.Quatf(1, 0, 0, 0))
+        is_root = link_prim.GetPath() == art_root_prim.GetPath()
+        if is_root:  # Isaac Lab fix_root_link 방식: 루트 API를 부모로 옮겨 PhysX가 고정 베이스 articulation으로 파싱하게 한다
+            parent = art_root_prim.GetParent(); UsdPhysics.ArticulationRootAPI.Apply(parent)
+            try:
+                from pxr import PhysxSchema; PhysxSchema.PhysxArticulationAPI.Apply(parent)
+                for attr in art_root_prim.GetAttributes():
+                    if attr.GetName().startswith("physxArticulation:") and attr.HasAuthoredValue(): parent.CreateAttribute(attr.GetName(), attr.GetTypeName()).Set(attr.Get())
+                art_root_prim.RemoveAPI(PhysxSchema.PhysxArticulationAPI)
+            except Exception as ex: res["fix_physx_api_note"] = str(ex)
+            art_root_prim.RemoveAPI(UsdPhysics.ArticulationRootAPI); art_root_path = parent.GetPath().pathString
+        else:        # 루트가 아닌 링크(골반): articulation 밖의 world 구속으로 잡는다(관절 트리는 그대로)
+            J.GetPrim().CreateAttribute("physics:excludeFromArticulation", Sdf.ValueTypeNames.Bool).Set(True); art_root_path = art_root_prim.GetPath().pathString
+    fix_res.update({"fixed_link": link_name, "mode": "fixed-base articulation (root API moved to parent)" if is_root else "world constraint joint (excludeFromArticulation)", "joint_prim": J.GetPath().pathString,
+                    "anchor_world_pos": [round(float(v), 4) for v in pos], "anchor_world_quat_wxyz": [round(rot.GetReal(), 4)] + [round(float(v), 4) for v in rot.GetImaginary()]}); fixL.Save()
+else: art_root_path = art_root_prim.GetPath().pathString
+res["pelvis_fix"] = fix_res
+# ---- (레이어 2) 외형: 링크별 UsdPreviewSurface를 visuals 스코프에 strongerThanDescendants 바인딩(충돌·질량·관절 무관)
+appL = new_sublayer("igris_appearance.usda"); res["layers"]["appearance"] = appL.identifier; app_stats = {}
+with Usd.EditContext(stage, Usd.EditTarget(appL)):
+    mats = {}
+    for cname, c in APP["classes"].items():
+        mat = UsdShade.Material.Define(stage, Sdf.Path(f"/World/Looks/IGRIS/{cname}")); sh = UsdShade.Shader.Define(stage, Sdf.Path(f"/World/Looks/IGRIS/{cname}/Shader")); sh.CreateIdAttr("UsdPreviewSurface")
+        sh.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(*[float(v) for v in c["diffuse"]])); sh.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(float(c["roughness"])); sh.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(float(c["metallic"]))
+        mat.CreateSurfaceOutput().ConnectToSource(sh.ConnectableAPI(), "surface"); mats[cname] = mat
+    for lk in [p for p in Usd.PrimRange(robot) if p.HasAPI(UsdPhysics.RigidBodyAPI)]:
+        cls = next((c for pat, c in APP["links"] if re.search(pat, lk.GetName())), None)
+        if cls is None: app_stats.setdefault("unmapped", []).append(lk.GetName()); continue
+        vis = lk.GetChild("visuals"); target = vis if vis.IsValid() else lk
+        UsdShade.MaterialBindingAPI.Apply(target).Bind(mats[cls], bindingStrength=UsdShade.Tokens.strongerThanDescendants); app_stats[cls] = app_stats.get(cls, 0) + 1
+appL.Save(); res["appearance"] = {"enabled": bool(app_on), "config": ig.get("appearance_config", "~/igris_ws/config/igris_appearance.yaml"), "links_per_class": app_stats, "reference_photos": APP.get("unmodeled") and "see config"}
+if not app_on: stage.MuteLayer(appL.identifier)
 res["placement"] = {"g1_slot_pos": g1["pos"], "g1_slot_rot_wxyz": g1["rot"], "igris_base_pos": [gx, gy, round(base_z, 4)], "igris_yaw_deg": round(math.degrees(yaw), 2),
                     "rule": "x,y,yaw from G1 slot (+xy_offset); z = floor_z(raycast) + standing_base_height + clearance (G1 z not copied)"}
-scene_dir = os.path.join(ROOTS.get("isaac_root", a.out), "scenes"); os.makedirs(scene_dir, exist_ok=True); scene_usda = os.path.join(scene_dir, "igris_in_vla_scene.usda")
-stage.GetRootLayer().Export(scene_usda); res["scene_layer"] = scene_usda
-roots = [p.GetPath().pathString for p in Usd.PrimRange(robot) if p.HasAPI(UsdPhysics.ArticulationRootAPI)]; assert roots, "IGRIS articulation root not found"
-art = SingleArticulation(prim_path=roots[0], name="igris_c"); world.scene.add(art); world.reset()
+scene_usda = os.path.join(scene_dir, "igris_in_vla_scene.usda"); stage.GetRootLayer().Export(scene_usda); res["scene_layer"] = scene_usda
+roots = [art_root_path]; art = SingleArticulation(prim_path=roots[0], name="igris_c"); world.scene.add(art); world.reset()
 names = list(art.dof_names); q0 = np.zeros(len(names), dtype=np.float32)
 for i, n in enumerate(names):
     for pat, v in ig.get("init_joint_pos", {}).items():
         if re.fullmatch(pat, n): q0[i] = float(v)
 def reset_pose():
-    art.set_world_pose(position=np.array([gx, gy, base_z]), orientation=np.array(qyaw)); art.set_joint_positions(q0); art.set_joint_velocities(np.zeros_like(q0))
-    art.set_linear_velocity(np.zeros(3)); art.set_angular_velocity(np.zeros(3))
+    if not fix_on: art.set_world_pose(position=np.array([gx, gy, base_z]), orientation=np.array(qyaw)); art.set_linear_velocity(np.zeros(3)); art.set_angular_velocity(np.zeros(3))
+    art.set_joint_positions(q0); art.set_joint_velocities(np.zeros_like(q0))
 ctrl = art.get_articulation_controller(); kp, kd = [np.array(v, dtype=np.float32).copy() for v in ctrl.get_gains()]; matched = 0
 for i, n in enumerate(names):
     for pat, (p_, d_) in ig.get("pd_gains", {}).items():
@@ -167,16 +222,36 @@ try:
         f = os.path.join(a.out, f"igris_vla_scene_{a.tag}_{name}.png"); capture_viewport_to_file(vp, f)
         for _ in range(10): app.update()
         shots.append(f)
+    if app_on:  # 같은 시점·조명에서 외형 전(레이어 mute)/후 비교
+        stage.MuteLayer(appL.identifier); shot("before_appearance_front", cam["eye"], cam["target"]); shot("before_appearance_diag", cfg["extra_views"][0]["eye"], cfg["extra_views"][0]["target"]); stage.UnmuteLayer(appL.identifier)
     shot("init_front", cam["eye"], cam["target"])
     for v in cfg.get("extra_views", []): shot(f"init_{v['name']}", v["eye"], v["target"])
 except Exception as ex: vp = None; res["viewport_error"] = str(ex)
+if app_on:  # 레이어 mute/unmute는 스테이지 재구성을 일으켜 물리 텐서 뷰가 무효화된다 → 다시 초기화
+    world.reset(); ctrl = art.get_articulation_controller(); ctrl.set_gains(kps=kp, kds=kd); reset_pose(); art.apply_action(ArticulationAction(joint_positions=q0)); world.step(render=True); world.pause()
 # ---- 기본 물리
 def tilt(q): return float(np.degrees(np.arccos(np.clip(1 - 2 * (float(q[1]) ** 2 + float(q[2]) ** 2), -1, 1))))
 series = []; peak = vram()[0]
 if not a.freeze:
     world.play(); steps = int(a.secs * 50); tw = time.time(); obj = stage.GetPrimAtPath(cfg["environment"][1]["prim"]) if len(cfg["environment"]) > 1 else None
+    AT = ig.get("arm_test", {}); arm_on = AT.get("enabled", False) if a.arm_test is None else a.arm_test
+    arm_idx = [i for i, n in enumerate(names) if any(re.fullmatch(p, n) for p in AT.get("joints", []))]; amp = float(AT.get("amplitude_rad", 0.4)); freq = float(AT.get("freq_hz", 0.3)); arm_log = []
+    fixed_prim = stage.GetPrimAtPath(art_root_path if fix_res.get("fixed_link") is None else next(p.GetPath().pathString for p in Usd.PrimRange(robot) if p.GetName() == fix_res["fixed_link"])) if fix_on else None
+    drift = []
+    class _UsdPose:  # 물리→USD 변환 갱신을 읽는다(별도 RigidPrim 뷰를 만들면 articulation 텐서 뷰가 무효화되므로 사용하지 않음)
+        def __init__(self, prim): self.prim = prim
+        def get_world_pose(self):
+            M = UsdGeom.Xformable(self.prim).ComputeLocalToWorldTransform(Usd.TimeCode.Default()).RemoveScaleShear(); q = M.ExtractRotationQuat(); return np.array(M.ExtractTranslation()), np.array([q.GetReal(), *q.GetImaginary()])
+    fixed_rp = _UsdPose(fixed_prim) if fixed_prim is not None else None
     for k in range(steps):
+        if arm_on and arm_idx:
+            tgt = q0.copy(); tgt[arm_idx] = q0[arm_idx] + amp * math.sin(2 * math.pi * freq * (k + 1) / 50.0); art.apply_action(ArticulationAction(joint_positions=tgt))
         world.step(render=True)
+        if fixed_rp is not None and (k % 10 == 0 or k == steps - 1):
+            fp, fq = fixed_rp.get_world_pose(); ap_ = np.array(fix_res["anchor_world_pos"]); aq = np.array(fix_res["anchor_world_quat_wxyz"]); dq = abs(float(np.dot(aq, np.array(fq, dtype=float))))
+            drift.append({"t": round((k + 1) / 50.0, 2), "pos_err_m": round(float(np.linalg.norm(np.array(fp, dtype=float) - ap_)), 5), "ang_err_deg": round(float(np.degrees(2 * np.arccos(min(1.0, dq)))), 4)})
+        if arm_on and arm_idx and (k % 10 == 0 or k == steps - 1):
+            qj = art.get_joint_positions(); arm_log.append({"t": round((k + 1) / 50.0, 2), "q": [round(float(qj[i]), 3) for i in arm_idx]})
         if k % 25 == 0 or k == steps - 1:
             p, q = art.get_world_pose(); qd = art.get_joint_velocities(); peak = max(peak, vram()[0]); lows = sorted((aabb(l)[0][2], l.GetName()) for l in links); zmin = lows[0][0]; lowest = lows[0][1]
             series.append({"t": round((k + 1) / 50.0, 2), "base_z": round(float(p[2]), 4), "robot_zmin_minus_floor": round(zmin - floor_z, 4), "tilt_deg": round(tilt(q), 2),
@@ -186,6 +261,10 @@ if not a.freeze:
                       "min_zmin_minus_floor_while_upright": min([s["robot_zmin_minus_floor"] for s in up], default=None), "min_zmin_minus_floor_overall": pen,
                       "base_keeps_sinking": bool(len(series) > 3 and series[-1]["base_z"] < series[-3]["base_z"] - 0.005), "note_zmin": "zmin은 시각 메시 AABB 기준(충돌 형상은 단순화되어 있어 넘어진 뒤 수 cm 차이 가능)", "table_aabb_after": aabb(stage.GetPrimAtPath(cfg["environment"][0]["prim"])),
                       "object_aabb_after": aabb(obj) if obj else None, "series": series}
+    if fixed_rp is not None: res["pelvis_fix"]["hold_check"] = {"secs": a.secs, "max_pos_err_m": max(d["pos_err_m"] for d in drift), "max_ang_err_deg": max(d["ang_err_deg"] for d in drift), "samples": len(drift), "tolerance": {"pos_m": float(FIX.get("hold_tolerance", {}).get("pos_m", 0.005)), "ang_deg": float(FIX.get("hold_tolerance", {}).get("ang_deg", 1.0))},
+                                                            "held": bool(max(d["pos_err_m"] for d in drift) < float(FIX.get("hold_tolerance", {}).get("pos_m", 0.005)) and max(d["ang_err_deg"] for d in drift) < float(FIX.get("hold_tolerance", {}).get("ang_deg", 1.0)))}
+    if arm_on and arm_idx:
+        qs = np.array([r["q"] for r in arm_log]); res["arm_test"] = {"joints": [names[i] for i in arm_idx], "commanded_amplitude_rad": amp, "freq_hz": freq, "observed_range_rad": [round(float(v), 3) for v in (qs.max(0) - qs.min(0))], "moved": bool((qs.max(0) - qs.min(0)).min() > 0.5 * amp), "samples": arm_log[::10]}
     res["balance_observation"] = {"upright_at_end": bool(series[-1]["tilt_deg"] < 20 and series[-1]["base_z"] > floor_z + 0.8 * stand), "note": "성공 기준 아님(균형 제어기 없음, 초기자세 PD 유지뿐)"}
     if vp is not None: shot("after_physics", cam["eye"], cam["target"])
 res["vram_mib"] = {"peak_during_run": peak, "total": vram()[1]}; res["screenshots"] = shots; res["elapsed_s"] = round(time.time() - t0, 1)

@@ -31,7 +31,7 @@ bash scripts/30_fetch_vla_scene.sh download && bash scripts/30_fetch_vla_scene.s
 bash scripts/30_fetch_vla_scene.sh forget            # gpg-agent 메모리의 암호 캐시 제거
 bash scripts/02_assets_manifest.sh verify            # 추출 자산 포함 84개 SHA-256 대조
 # 7) 기존 환경 + IGRIS-C 1대 (GUI, 5초 물리 후 초기 배치로 되돌려 창 유지)
-bash scripts/run_igris_vla_scene.sh --secs 5 --hold 3600
+bash scripts/run_igris_vla_scene.sh --secs 12 --hold 3600   # 기본: 골반 고정(지지 상태, 균형 제어 아님) + 임시 근사 외형. 끄기: --no-fix / --no-appearance
 #    설치 확인용 빈 장면: bash scripts/run_isaac_igris.sh --secs 5 --hold 60
 ```
 
@@ -39,7 +39,9 @@ bash scripts/run_igris_vla_scene.sh --secs 5 --hold 3600
 
 ![existing environment + IGRIS-C](docs/img/igris_vla_scene_init_diag.jpg)
 
-초기 배치(물리 시작 전). 제어기가 없으므로 물리를 재생하면 로봇은 1–2초 내에 넘어진다(정상 범주).
+초기 배치(물리 시작 전, 4차 시점·외형 적용 전). 기본 설정은 골반을 월드에 고정한 지지 상태이며, `--no-fix`에서는 제어기가 없어 1–2초 내에 넘어진다.
+
+임시 근사 외형(공식 스킨 아님) 전/후: `docs/img/igris_before_appearance_diag.jpg`, `docs/img/igris_after_appearance_diag.jpg`
 
 ## 구성
 

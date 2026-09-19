@@ -51,6 +51,16 @@ igris:
   clearance: 0.01
   raycast_from_above: 0.3       # g1_slot z + 0.3 에서 아래로 raycast → 바닥 z
   xy_offset: [0.0, 0.0]         # 초기 겹침이 있으면 결과 JSON의 overlap을 근거로만 조정
+  fix:                          # 골반 고정(별도 레이어 igris_fix_pelvis.usda). CLI --fix/--no-fix/--fix-link 로 덮어씀
+    enabled: true
+    hold_tolerance: {pos_m: 0.005, ang_deg: 1.0}   # 사용자 결정(2026-09-19): 팔 동작 중 방향 오차 최대 0.5°는 허용
+    link: auto                  # auto = 양쪽 Joint_Hip_Pitch의 부모(Link_Waist_Pitch, 실제 골반). root = articulation root(base_link = 상체)를 Lab 방식 고정
+  appearance_config: ~/igris_ws/config/igris_appearance.yaml   # 외형 override 레이어 igris_appearance.usda (CLI --no-appearance)
+  arm_test:                     # 고정 검증용: 팔 관절 사인파 목표(초기자세 기준). CLI --arm-test
+    enabled: true
+    joints: ["Joint_Shoulder_Pitch_(Left|Right)", "Joint_Elbow_Pitch_(Left|Right)"]
+    amplitude_rad: 0.4
+    freq_hz: 0.3
   yaw_offset_deg: 0.0
   init_joint_pos:               # robros.py init_state.joint_pos
     ".*_Hip_Pitch_.*": -0.2

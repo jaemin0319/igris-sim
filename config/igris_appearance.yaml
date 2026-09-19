@@ -1,0 +1,36 @@
+# [임시 근사 재질 — 공식 스킨 아님] 공식 외형·재질 파일 제공 여부 확인 전까지 추가 수정·최종 확정 보류(2026-09-19)
+# IGRIS-C 렌더링 재질 override (별도 레이어 igris_appearance.usda 로 생성; 원본 USD·충돌/질량/관절/마찰 무변경)
+#
+# 왜 필요한가: 공식 Isaac USD(from_urdf)는 STL 메시마다 흰색 OmniPBR 기본재질(diffuse 1,1,1, 텍스처 없음)만 담고 있고,
+# 공식 URDF/MJCF(igris_c_description_public, GMR 자산)도 전 부품 공통 placeholder(material "random", rgba 0.0706 0.0706 0.0706 0.7)뿐이다.
+# → 완성된 공식 재질·텍스처가 없으므로 ROBROS 공식 IGRIS-C 제품 사진을 참고해 부위별 색·거칠기·금속성을 정했다.
+#
+# 참고 출처(IGRIS-C, 다른 IGRIS 버전 아님): https://www.robros.co.kr/en/igrisc 의 /images/igrisc/igrisc-{front,oblique,side,rear}.png
+#   (사본: /mnt/isaac/reference/robros_igrisc/, SOURCE.txt) — 값은 사진의 육안 판독이며 실측 색상값이 아니다.
+# 한계: 외장 형상은 공식 STL 그대로다. 사진의 커버·통풍구·LED·배선 등 메시에 없는 형상은 색으로 흉내 내지 않았고, 아래 unmodeled에 남겼다.
+enabled: true
+classes:   # sRGB 근사, UsdPreviewSurface(diffuseColor/roughness/metallic)
+  shell:     {diffuse: [0.72, 0.71, 0.68], roughness: 0.45, metallic: 0.15, note: "밝은 웜그레이 새틴 커버(몸통·상완·허벅지·정강이·머리 셸)"}
+  housing:   {diffuse: [0.46, 0.46, 0.46], roughness: 0.60, metallic: 0.10, note: "관절/액추에이터 하우징(어깨·고관절·발목·손목·목), 중간 회색 무광"}
+  mechanism: {diffuse: [0.12, 0.12, 0.12], roughness: 0.55, metallic: 0.30, note: "허리·골반·무릎 노출 기구부, 어두운 무광"}
+  hand:      {diffuse: [0.33, 0.33, 0.33], roughness: 0.70, metallic: 0.05, note: "손·손가락, 어두운 회색 플라스틱"}
+  foot:      {diffuse: [0.55, 0.55, 0.54], roughness: 0.60, metallic: 0.10, note: "발판, 회색"}
+links:     # 정규식 → class (위에서부터 첫 일치). 링크 이름은 공식 URDF igris_c_v2_wrist_hand_isaac.urdf 기준(56개)
+  - ["^base_link$", shell]                       # 몸통(torso) 셸 — 실제 articulation root
+  - ["^Link_Neck_Pitch$", shell]                 # 머리 셸
+  - ["^Link_Neck_Yaw$", housing]
+  - ["^Link_Waist_(Yaw|Roll|Pitch)$", mechanism] # 허리·골반(Link_Waist_Pitch = 골반, 양쪽 고관절의 부모)
+  - ["^Link_Shoulder_(Pitch|Roll)_(Left|Right)$", housing]
+  - ["^Link_Shoulder_Yaw_(Left|Right)$", shell]  # 상완
+  - ["^Link_Elbow_Pitch_(Left|Right)$", shell]   # 전완
+  - ["^Link_Wrist_(Yaw|Roll|Pitch)_(Left|Right)$", housing]
+  - ["^(Left|Right)_Hand$", hand]
+  - ["^[lr]_(thumb|index|middle|ring|little)_", hand]
+  - ["^Link_Hip_(Pitch|Roll)_(Left|Right)$", housing]
+  - ["^Link_Hip_Yaw_(Left|Right)$", shell]       # 허벅지
+  - ["^Link_Knee_Pitch_(Left|Right)$", shell]    # 정강이
+  - ["^Link_Ankle_Pitch_(Left|Right)$", housing]
+  - ["^Link_Ankle_Roll_(Left|Right)$", foot]
+unmodeled:  # 색만으로 대체하지 않은 항목(별도 모델링 필요, 이번 범위 밖)
+  - "가슴 로고, 흉부 통풍구, 팔 LED 스트립, 얼굴 바이저/눈, 노출 배선(빨강)"
+  - "사진의 부드러운 커버 곡면과 STL 메시 형상의 차이"

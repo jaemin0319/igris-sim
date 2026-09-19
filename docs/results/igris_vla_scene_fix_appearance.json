@@ -1,0 +1,132 @@
+{
+ "root_body": {
+  "articulation_root": "/World/envs/env_0/IGRIS_C/base_link",
+  "root_children_joints": [],
+  "pelvis_link(parent of hip joints)": "Link_Waist_Pitch"
+ },
+ "pelvis_fix": {
+  "enabled": true,
+  "fixed_link": "Link_Waist_Pitch",
+  "mode": "world constraint joint (excludeFromArticulation)",
+  "joint_prim": "/World/envs/env_0/IGRIS_C/Link_Waist_Pitch/WorldFixedJoint_igris_sim",
+  "anchor_world_pos": [
+   -0.15,
+   0.05,
+   0.905
+  ],
+  "anchor_world_quat_wxyz": [
+   0.7071,
+   0.0,
+   0.0,
+   0.7071
+  ],
+  "hold_check": {
+   "secs": 12.0,
+   "max_pos_err_m": 0.0,
+   "max_ang_err_deg": 0.5019,
+   "samples": 61,
+   "held": false
+  }
+ },
+ "appearance": {
+  "enabled": true,
+  "config": "~/igris_ws/config/igris_appearance.yaml",
+  "links_per_class": {
+   "shell": 10,
+   "housing": 17,
+   "hand": 24,
+   "mechanism": 3,
+   "foot": 2
+  },
+  "reference_photos": "see config"
+ },
+ "placement": {
+  "g1_slot_pos": [
+   -0.15,
+   0.0,
+   0.76
+  ],
+  "g1_slot_rot_wxyz": [
+   0.7071,
+   0.0,
+   0.0,
+   0.7071
+  ],
+  "igris_base_pos": [
+   -0.15,
+   0.0,
+   0.971
+  ],
+  "igris_yaw_deg": 90.0,
+  "rule": "x,y,yaw from G1 slot (+xy_offset); z = floor_z(raycast) + standing_base_height + clearance (G1 z not copied)"
+ },
+ "floor": {
+  "raycast_from": [
+   -0.15,
+   0.0,
+   1.06
+  ],
+  "hit": true,
+  "collider": "/World/GroundPlane/GroundPlane/CollisionPlane",
+  "floor_z": 0.0
+ },
+ "dependencies": {
+  "layers": 9,
+  "assets": 29,
+  "unresolved": 0,
+  "unresolved_list": []
+ },
+ "initial_check_link_level": {
+  "robot_links": 56,
+  "table_mesh_parts": 24,
+  "link_vs_tablepart_aabb_overlaps": [],
+  "count": 0
+ },
+ "vram_mib": {
+  "peak_during_run": 3080,
+  "total": 8188
+ },
+ "ground_mode": "lab_grid",
+ "arm_test": {
+  "joints": [
+   "Joint_Shoulder_Pitch_Left",
+   "Joint_Shoulder_Pitch_Right",
+   "Joint_Elbow_Pitch_Left",
+   "Joint_Elbow_Pitch_Right"
+  ],
+  "commanded_amplitude_rad": 0.4,
+  "freq_hz": 0.3,
+  "observed_range_rad": [
+   0.391,
+   0.391,
+   0.461,
+   0.46
+  ],
+  "moved": true
+ },
+ "physics": {
+  "sim_secs": 12.0,
+  "wall_secs": 8.12,
+  "realtime_factor": 1.48,
+  "all_finite": true,
+  "min_zmin_minus_floor_while_upright": 0.009,
+  "min_zmin_minus_floor_overall": 0.009,
+  "base_keeps_sinking": false,
+  "note_zmin": "zmin은 시각 메시 AABB 기준(충돌 형상은 단순화되어 있어 넘어진 뒤 수 cm 차이 가능)"
+ },
+ "initial_check": {
+  "robot_aabb_min": [
+   -0.435,
+   -0.118,
+   0.01
+  ],
+  "robot_aabb_max": [
+   0.135,
+   0.177,
+   1.538
+  ],
+  "foot_bottom_minus_floor": 0.0098,
+  "feet_on_or_above_floor": true
+ },
+ "note": "run tag view2 (GUI, 12 s). held=false in this run used the old 0.5 deg threshold; tolerance is now 1.0 deg by user decision."
+}

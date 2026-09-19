@@ -75,7 +75,8 @@ ISAAC_ROOT=/mnt/isaac bash ~/igris_ws/scripts/20_install_isaac.sh          # ver
 # 기존 환경 자산(암호는 pinentry 창에만): download → list → extract → forget
 bash ~/igris_ws/scripts/30_fetch_vla_scene.sh download|list|extract|forget
 # ★ 기존 환경 + IGRIS-C 1대(GUI 유지)
-bash ~/igris_ws/scripts/run_igris_vla_scene.sh --secs 5 --hold 3600
+bash ~/igris_ws/scripts/run_igris_vla_scene.sh --secs 12 --hold 3600      # 기본: 골반 고정 on + 임시 외형 on + 팔 동작 시험
+#   옵션: --no-fix(고정 해제, 제어기 없어 넘어짐) · --fix-link root(상체 base_link를 고정 베이스로) · --no-appearance(공식 USD의 흰색 그대로) · --headless
 ```
 
 ## 5. 디스크 (실측, 3차 갱신)
@@ -113,3 +114,16 @@ bash ~/igris_ws/scripts/run_igris_vla_scene.sh --secs 5 --hold 3600
 - 원본 보존: 자산은 전부 reference, 재질·kinematic·배치는 새 레이어(`/mnt/isaac/scenes/igris_in_vla_scene.usda`)의 override. 로봇 USD에 Bake/Flatten 없음.
 - 장면 카메라 `/World/SceneCamera`(eye (−0.1,3.6,1.6) = 부모 cfg의 world_camera 위치). G1 탑재 카메라·손·브래킷·제어 스크립트는 미이식.
 - 결과물: `data/isaac/igris_vla_scene_<tag>.json`(자산 누락·겹침·발 높이·물리 시계열·VRAM) + `…_init_{front,diag,side}.png`, `…_after_physics.png`.
+
+## 9. IGRIS override 레이어 (원본 USD 무수정, Bake/Flatten 없음)
+
+루트 장면 레이어의 subLayer로 두 파일을 실행 시 생성한다(`/mnt/isaac/scenes/`). 설정 원본은 Git의 YAML.
+
+| 레이어 | 설정 | 내용 | 끄기 |
+| --- | --- | --- | --- |
+| `igris_fix_pelvis.usda` | `config/vla_scene.yaml` → `igris.fix {enabled, link, hold_tolerance}` | 현재 자세의 월드 포즈에 world→링크 FixedJoint. `link: auto` = 양쪽 Joint_Hip_Pitch의 부모(`Link_Waist_Pitch`, 실제 골반; articulation 밖 구속). `root` = `base_link`(상체)를 Isaac Lab `fix_root_link` 방식(루트 API를 부모로 이동)으로 고정 | `--no-fix` 또는 `enabled: false` |
+| `igris_appearance.usda` | `config/igris_appearance.yaml` | 링크 `visuals` 스코프에 UsdPreviewSurface를 strongerThanDescendants로 바인딩(렌더링 전용) | `--no-appearance` 또는 `enabled: false` |
+
+- 골반 고정은 **지지 상태**(균형 제어 아님). 검증: 12초, 위치 0.00mm·방향 ≤0.50°(허용치 1.0°), 팔 4관절 사인파 추종 확인(`igris.arm_test`).
+- 외형은 **공식 스킨이 아닌 임시 근사 재질**(공식 사진 육안 참고, 출처는 YAML 머리말). 공식 외형·재질 파일 제공 여부 확인 전까지 수정·확정 보류.
+- 구현 메모: 레이어 mute/unmute·RigidPrim 뷰 추가는 PhysX 텐서 뷰를 무효화하므로, 전후 스크린샷 뒤 `world.reset()`으로 재초기화하고 고정 링크 포즈는 USD 변환에서 읽는다. 최종 배치·레이어 작성은 `world.stop()` 상태에서 한다(관절 프레임 불일치 경고 방지).

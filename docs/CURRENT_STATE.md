@@ -1,6 +1,34 @@
-# CURRENT STATE — 2026-09-18 (4차 갱신: 기존 환경 + IGRIS-C 장면 실행)
+# CURRENT STATE — 2026-09-19 (5차 갱신: 골반 고정 + 임시 외형 레이어 확정)
 
-판정: PASS / FAIL / BLOCKED / NOT TESTED. 로그: `~/igris_ws/logs/`, 결과 JSON·스크린샷: `~/igris_ws/data/isaac/`.
+판정: PASS / FAIL / BLOCKED / NOT TESTED. 로그: `~/igris_ws/logs/`, 결과: `~/igris_ws/data/isaac/`(Git 제외), 요약본: `docs/results/`.
+
+## 5차 — 골반 고정·외형 레이어 (사용자 화면 확인 후 확정)
+
+실행: `bash ~/igris_ws/scripts/run_igris_vla_scene.sh --secs 12 --hold 3600` · 끄기: `--no-fix`, `--no-appearance` · 고정 링크 변경: `--fix-link root|<링크명>`
+
+| 항목 | 판정 | 근거 |
+| --- | --- | --- |
+| 루트/골반 식별: articulation root `base_link`는 **상체(torso)**(자식: 목·양어깨·허리 요우). 실제 골반 = 양쪽 `Joint_Hip_Pitch`의 부모 **`Link_Waist_Pitch`** | PASS | docs/results/igris_vla_scene_fix_appearance.json `root_body` |
+| 골반 고정: 별도 레이어 `igris_fix_pelvis.usda`에 world→`Link_Waist_Pitch` FixedJoint(`excludeFromArticulation`). 로봇 kinematic화·관절 잠금 없음, 51 DOF articulation 유지 | PASS | 〃 `pelvis_fix` |
+| 12초 유지: 위치 오차 0.00mm, **방향 오차 최대 0.50°**(팔 동작 중; 사용자 허용, 허용치 `hold_tolerance` 1.0°로 설정). 해당 실행 JSON의 `held=false`는 변경 전 임계 0.5° 기준 | PASS(허용) | 〃 `hold_check` |
+| 팔 관절 움직임: 어깨 pitch·팔꿈치 pitch 좌우 4관절, 목표 ±0.4rad@0.3Hz → 관측 범위 0.39–0.46rad | PASS | 〃 `arm_test` |
+| **균형 제어** | **해당 없음 — 월드에 골반을 고정한 지지 상태다. 균형 제어 성공이 아니다.** `--no-fix`에서는 1–2초 내 넘어진다(4차 결과) | — |
+| 흰색 원인: 공식 USD가 STL 메시+흰색 OmniPBR 기본재질(diffuse 1,1,1, 텍스처 없음)만 포함. 공식 URDF/MJCF·GMR 자산도 공통 placeholder(`random` rgba 0.0706, α0.7)뿐 → 경로/바인딩 문제 아님, **완성된 공식 재질 없음** | PASS(조사) | logs/80, data/isaac/inspect_igris_usd.json |
+| 외형: 별도 레이어 `igris_appearance.usda`, 56링크를 5개 재질군으로 바인딩(렌더링 전용; 충돌·질량·관성·관절·마찰 무변경). 같은 시점·조명 전후 스크린샷 | PASS(적용) | docs/img/igris_{before,after}_appearance_diag.jpg |
+| **외형의 지위** | **공식 스킨 아님 — ROBROS 공식 제품 사진(robros.co.kr/en/igrisc)을 육안 참고한 임시 근사 재질.** 로고·통풍구·LED·바이저·배선 등 메시에 없는 형상은 미구현 | config/igris_appearance.yaml |
+| 자산 누락 0, 링크 단위 초기 겹침 0, 발바닥−바닥 +9.8mm, VRAM 최대 3.1GB | PASS | docs/results/… |
+
+### 보류
+- **외형 작업의 추가 수정·최종 확정은 보류**: ROBROS의 공식 외형·재질 파일(텍스처/컬러 메시/USD 재질) 제공 여부를 확인한 뒤 진행. 그 전까지 `config/igris_appearance.yaml`은 임시값.
+- 방향 오차 축소(솔버 반복 수 상향, 또는 `--fix-link root`로 상체 루트를 고정 베이스로) 비교는 미실시 — 현재 허용.
+
+### 자산 보관
+- 참고 사진 사본: `/mnt/isaac/reference/robros_igrisc/`(SOURCE.txt, DOWNLOADED_AT.txt). ROBROS 저작물이므로 Git에 넣지 않고 URL만 기록.
+- 생성 레이어: `/mnt/isaac/scenes/{igris_in_vla_scene,igris_fix_pelvis,igris_appearance}.usda` — 실행 때마다 YAML에서 재생성되므로 보관 불필요(원본은 `config/*.yaml`).
+
+---
+
+(이하 4차 갱신 기록)
 
 ## 이번 목표 결과 — 기존 G1 시뮬 환경에 공식 IGRIS-C 1대
 

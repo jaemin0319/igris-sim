@@ -1,0 +1,80 @@
+{
+ "run_tag": "monitor",
+ "cells": {
+  "head": "HEAD STEREO (L | R)",
+  "left": "LEFT HAND",
+  "right": "RIGHT HAND"
+ },
+ "docked": [
+  true,
+  true,
+  true
+ ],
+ "paused_stats": {
+  "head": {
+   "mean": 149.0,
+   "std": 68.8,
+   "dark_frac": 0.0,
+   "shape": [
+    480,
+    1280,
+    3
+   ]
+  },
+  "left": {
+   "mean": 111.1,
+   "std": 64.7,
+   "dark_frac": 0.069,
+   "shape": [
+    200,
+    320,
+    3
+   ]
+  },
+  "right": {
+   "mean": 80.2,
+   "std": 60.2,
+   "dark_frac": 0.078,
+   "shape": [
+    200,
+    320,
+    3
+   ]
+  }
+ },
+ "paused_hold_diff_30f": {
+  "head": 0.74,
+  "left": 1.7,
+  "right": 1.58
+ },
+ "play_diff_vs_paused": {
+  "head": 45.77,
+  "left": 58.34,
+  "right": 63.46
+ },
+ "pause_render_settle_diff": {
+  "head": 1.49,
+  "left": 15.22,
+  "right": 17.51
+ },
+ "pause_again_diff_30f": {
+  "head": 0.4,
+  "left": 1.83,
+  "right": 2.14
+ },
+ "thresholds": {
+  "unchanged_max": 4.0,
+  "changed_min": 8.0,
+  "note": "RTX 경로추적 누적 노이즈로 정지 화면도 프레임 간 평균 절대차 1–2/255 발생"
+ },
+ "verdict": {
+  "head": true,
+  "left": true,
+  "right": true
+ },
+ "window_screenshot": "monitor_window.png",
+ "vram_mib": {
+  "peak_during_run": 3727,
+  "total": 8188
+ }
+}

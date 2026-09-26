@@ -76,6 +76,7 @@ ISAAC_ROOT=/mnt/isaac bash ~/igris_ws/scripts/20_install_isaac.sh          # ver
 bash ~/igris_ws/scripts/30_fetch_vla_scene.sh download|list|extract|forget
 # ★ 기존 환경 + IGRIS-C 1대(GUI 유지)
 bash ~/igris_ws/scripts/run_igris_vla_scene.sh --secs 12 --hold 3600      # 기본: 골반 고정 on + 임시 외형 on + RGB 카메라 4개 on + 팔·손목 동작 시험
+#   하단 실시간 모니터 [HEAD STEREO (L|R)] [LEFT HAND] [RIGHT HAND] 기본 표시(scripts/isaac/igris_monitor.py) · 끄기: --no-monitor
 #   카메라 옵션: --no-cameras · --viewport-camera head_left|head_right|hand_left|hand_right|scene (hold 중 GUI 뷰포트) · 캡처: data/isaac/cameras/<tag>_{static,moving,end}_*.png
 #   옵션: --no-fix(고정 해제, 제어기 없어 넘어짐) · --fix-link root(상체 base_link를 고정 베이스로) · --no-appearance(공식 USD의 흰색 그대로) · --headless
 ```

@@ -1,6 +1,30 @@
-# CURRENT STATE — 2026-09-26 (6차 갱신: RGB 카메라 4개)
+# CURRENT STATE — 2026-09-26 (7차 갱신: GUI 하단 카메라 모니터)
 
 판정: PASS / FAIL / BLOCKED / NOT TESTED. 로그: `~/igris_ws/logs/`, 결과: `~/igris_ws/data/isaac/`(Git 제외), 요약본: `docs/results/`, 미리보기: `docs/img/`.
+
+## 7차 — Isaac Sim 한 창 안 하단 실시간 모니터 [HEAD STEREO (L|R)] [LEFT HAND] [RIGHT HAND]
+
+실행(기본 표시): `bash ~/igris_ws/scripts/run_igris_vla_scene.sh --secs 12 --hold 3600` · 끄기: `--no-monitor` (헤드리스에서는 자동 비활성)
+
+| 항목 | 판정 | 근거 |
+| --- | --- | --- |
+| 구현: `scripts/isaac/igris_monitor.py` — 기존 카메라 센서 4개의 RGBA를 `omni.ui.DynamicTextureProvider`로 그리는 `ui.Window` 3개를 메인 뷰포트 아래에 도킹(머리 BOTTOM 30% → 왼손 RIGHT → 오른손 RIGHT). G1 `sim_main.py`의 '3-camera bottom monitor' 도킹 방식을 따르되, 머리 좌\|우 결합 때문에 뷰포트 창 대신 이미지 창 사용. 카메라·뷰포트 추가 생성 없음, 포즈·화각 불변 | PASS | docs/results/igris_monitor.json `docked` |
+| 셀 이름·종횡비: 라벨 "HEAD STEREO (L \| R) 1280x480", "LEFT HAND 320x200", "RIGHT HAND 320x200"; `IWP_PRESERVE_ASPECT_FIT` | PASS | docs/img/igris_monitor_window.jpg |
+| 전체 창 스크린샷(스왑체인 캡처) | PASS | data/isaac/monitor/monitor_window.png |
+| 일시정지 유지: 30프레임 평균 절대차 head 0.75 / left 1.7 / right 1.6 (RTX 누적 노이즈 수준, 임계 4.0) | PASS | 〃 `paused_hold_diff_30f` |
+| 재생 시 갱신: 팔·손목 사인파 1.5초 재생 후 차이 head 45.7 / left 58.4 / right 63.5 (임계 8.0) | PASS | 〃 `play_diff_vs_paused` |
+| 다시 일시정지: 수렴 후 30프레임 차이 0.4 / 1.8 / 2.1 → 마지막 프레임 유지 | PASS | 〃 `pause_again_diff_30f` |
+| 검은 화면 없음(dark_frac 0.00 / 0.07 / 0.08), 좌\|우 순서: 좌안 영상이 왼쪽 절반(좌안이 좌측 벽을 더 봄) | PASS | data/isaac/monitor/monitor_cell_head_after_play.png |
+| 성능: 모니터 포함 VRAM 최대 3.9 GB; 셀 갱신은 CPU 복사(1280×480×4 매 프레임) | 관찰 | 〃 |
+
+메모: `ByteImageProvider.set_bytes_data_from_gpu`(torch 포인터)와 `set_raw_bytes_data`(capsule) 경로는 이 환경에서 화면에 그려지지 않아 `DynamicTextureProvider.set_data_array`로 확정(`data/isaac/monitor/ui_provider_test*.png`). 창 생성 전에 자리표시 텍스처를 넣어야 셀이 표시된다.
+
+### 미검증
+- 사용자가 GUI에서 Play/Pause 버튼을 눌렀을 때의 동작(스크립트 내 `world.play()/pause()`로만 검증). 창 크기 변경 시 레이아웃 유지.
+
+---
+
+(이하 6차 갱신 기록)
 
 ## 6차 — 머리 좌/우 눈 + 좌/우 손바닥 RGB 카메라 (GUI 실행·실제 렌더 검증 완료)
 

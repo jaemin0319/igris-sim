@@ -19,6 +19,7 @@ ap.add_argument("--appearance", dest="appearance", action="store_true", default=
 ap.add_argument("--arm-test", dest="arm_test", action="store_true", default=None, help="물리 중 팔 관절에 사인파 목표를 주어 움직임 확인")
 ap.add_argument("--cameras", dest="cameras", action="store_true", default=None); ap.add_argument("--no-cameras", dest="cameras", action="store_false")
 ap.add_argument("--viewport-camera", default="scene", help="GUI viewport: scene | head_left | head_right | hand_left | hand_right")
+ap.add_argument("--no-monitor", dest="monitor", action="store_false", default=True, help="아래쪽 [머리 스테레오][왼손][오른손] 실시간 모니터 끄기(GUI 전용)")
 a = ap.parse_args(); os.makedirs(a.out, exist_ok=True)
 import yaml
 cfg = yaml.safe_load(open(a.config))
@@ -200,6 +201,12 @@ res["load"] = {"igris_usd": IGRIS_USD, "articulation_root": roots[0], "num_dof":
                "mesh_prims_total": sum(1 for p in Usd.PrimRange(stage.GetPseudoRoot(), Usd.TraverseInstanceProxies()) if p.IsA(UsdGeom.Mesh))}
 if cam_on:
     cam_sensors = IC.make_sensors(stage, camL, cam_specs); res["cameras"] = {"config": ig.get("cameras_config", "~/igris_ws/config/igris_cameras.yaml"), "specs": cam_specs, "captures": {}}
+monitor = None
+if cam_on and a.monitor and not a.headless:
+    import igris_monitor as IM; monitor = IM.CameraMonitor(cam_sensors, cam_specs); res["monitor"] = {"enabled": True, "cells": IM.LABELS}
+    for _ in range(8): app.update()
+def mon(): 
+    if monitor is not None: monitor.update()
 # ---- 초기 겹침·발 높이(물리 시작 전 자세 기준 AABB)
 timeline = omni.timeline.get_timeline_interface() if hasattr(omni, "timeline") else None
 world.step(render=True); reset_pose(); world.pause()
@@ -268,7 +275,7 @@ if not a.freeze:
         k_now = k + 1
         if arm_on and arm_idx:
             tgt = q0.copy(); tgt[arm_idx] = q0[arm_idx] + amp * math.sin(2 * math.pi * freq * (k + 1) / 50.0); art.apply_action(ArticulationAction(joint_positions=tgt))
-        world.step(render=True)
+        world.step(render=True); mon()
         if fixed_rp is not None and (k % 10 == 0 or k == steps - 1):
             fp, fq = fixed_rp.get_world_pose(); ap_ = np.array(fix_res["anchor_world_pos"]); aq = np.array(fix_res["anchor_world_quat_wxyz"]); dq = abs(float(np.dot(aq, np.array(fq, dtype=float))))
             drift.append({"t": round((k + 1) / 50.0, 2), "pos_err_m": round(float(np.linalg.norm(np.array(fp, dtype=float) - ap_)), 5), "ang_err_deg": round(float(np.degrees(2 * np.arccos(min(1.0, dq)))), 4)})
@@ -305,6 +312,29 @@ js = os.path.join(a.out, f"igris_vla_scene_{a.tag}.json"); json.dump(res, open(j
 if a.hold > 0:                                                                                      # 사용자가 직접 확인: 초기 배치로 되돌려 멈춘 채 창을 열어 둔다(Play로 물리 재생 가능)
     reset_pose(); world.pause(); set_camera_view(eye=cam["eye"], target=cam["target"], camera_prim_path=cam["prim"])
     if a.viewport_camera != "scene" and vp is not None and a.viewport_camera in VP_CHOICE: vp.camera_path = VP_CHOICE[a.viewport_camera]; print("[viewport]", VP_CHOICE[a.viewport_camera], flush=True)
+    if monitor is not None:  # 모니터 검증: 일시정지 프레임 유지 → 재생(팔 동작) 중 갱신 → 다시 일시정지 후 유지, 전체 창 스크린샷
+        mon_dir = os.path.join(a.out, "monitor"); os.makedirs(mon_dir, exist_ok=True); from PIL import Image as _Im
+        for _ in range(10): app.update(); mon()
+        A = monitor.copy_last(); statA = monitor.snapshot()
+        for _ in range(30): app.update(); mon()
+        hold_diff = monitor.diff(A)                                                                     # 일시정지 상태 30프레임: 변화 없어야 함
+        world.play()
+        for k in range(75):
+            tgt = q0.copy(); tgt[arm_idx] = q0[arm_idx] + amp * math.sin(2 * math.pi * freq * (k + 1) / 50.0) if arm_idx else 0; art.apply_action(ArticulationAction(joint_positions=tgt)); world.step(render=True); mon()
+        B = monitor.copy_last(); statB = monitor.snapshot(); play_diff = monitor.diff(A); world.pause()
+        for _ in range(15): app.update(); mon()                                                          # RTX 누적 렌더가 수렴할 시간
+        B2 = monitor.copy_last()
+        for _ in range(30): app.update(); mon()
+        pause_diff = monitor.diff(B2); pause_settle_diff = monitor.diff(B)                               # 일시정지 후 30프레임: 마지막 프레임 유지
+        for kk, im in B.items(): _Im.fromarray(im).save(os.path.join(mon_dir, f"{a.tag}_cell_{kk}_after_play.png"))
+        for kk, im in A.items(): _Im.fromarray(im).save(os.path.join(mon_dir, f"{a.tag}_cell_{kk}_paused.png"))
+        shot_path = os.path.join(mon_dir, f"{a.tag}_window.png"); ok = False
+        try: ok = IM.capture_app_window(shot_path, app, frames=4)
+        except Exception as ex: res["monitor"]["window_shot_error"] = str(ex)
+        res["monitor"].update({"docked": getattr(monitor, "docked", None), "paused_stats": statA, "paused_hold_diff_30f": hold_diff, "play_diff_vs_paused": play_diff, "after_play_stats": statB, "pause_again_diff_30f": pause_diff, "pause_render_settle_diff": pause_settle_diff,
+                               "window_screenshot": shot_path if ok else None, "thresholds": {"unchanged_max": 4.0, "changed_min": 8.0, "note": "RTX 경로추적 누적 노이즈로 정지 화면도 프레임 간 평균 절대차 1–2/255 발생"},
+                               "verdict": {k: bool(statA[k]["dark_frac"] < 0.5 and hold_diff[k] < 4.0 and play_diff[k] > 8.0 and pause_diff[k] < 4.0) for k in statA}})
+        reset_pose(); world.pause(); json.dump(res, open(js, "w"), indent=1, default=str); print("[monitor] verdict", res["monitor"]["verdict"], flush=True)
     th = time.time()
-    while time.time() - th < a.hold and app.is_running(): app.update()
+    while time.time() - th < a.hold and app.is_running(): app.update(); mon()
 app.close()

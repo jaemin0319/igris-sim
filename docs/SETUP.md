@@ -119,14 +119,16 @@ bash ~/igris_ws/scripts/run_igris_vla_scene.sh --secs 12 --hold 3600      # 기�
 
 ## 9. IGRIS override 레이어 (원본 USD 무수정, Bake/Flatten 없음)
 
-루트 장면 레이어의 subLayer로 두 파일을 실행 시 생성한다(`/mnt/isaac/scenes/`). 설정 원본은 Git의 YAML.
+루트 장면 레이어의 subLayer로 아래 파일을 실행 시 생성한다(`/mnt/isaac/scenes/`). 설정 원본은 Git의 YAML.
 
 | 레이어 | 설정 | 내용 | 끄기 |
 | --- | --- | --- | --- |
-| `igris_fix_base.usda` | `config/vla_scene.yaml` → `igris.fix {enabled, link, hold_tolerance}` (기본 `link: root`) | 현재 자세의 월드 포즈에 world→링크 FixedJoint. `link: auto` = 양쪽 Joint_Hip_Pitch의 부모(`Link_Waist_Pitch`, 실제 골반; articulation 밖 구속). `root` = `base_link`(상체)를 Isaac Lab `fix_root_link` 방식(루트 API를 부모로 이동)으로 고정 | `--no-fix` 또는 `enabled: false` |
+| `igris_fix_base.usda` | `config/vla_scene.yaml` → `igris.fix {enabled, link, hold_tolerance}` (**기본 `link: root`**) | 현재 자세의 월드 포즈에 world→링크 FixedJoint 1개. **기본 `root` = `base_link`(몸통)** 을 Isaac Lab `fix_root_link` 방식(루트 API를 부모로 이동)으로 고정. `auto` = 골반(`Link_Waist_Pitch`, 양쪽 Joint_Hip_Pitch의 부모) world 구속 — 5–7차 방식, 몸통 흔들림으로 기본에서 제외 | `--no-fix` 또는 `enabled: false` |
+| `igris_head_pose.usda` | `igris.head_pitch_deg` (기본 30) | FixedJoint `Joint_Neck_Pitch`의 관절 프레임+링크 xform 회전 override(URDF 한계 ±30°) | `head_pitch_deg: 0`(레이어 미생성) · 실행 1회만 `--head-pitch` |
 | `igris_appearance.usda` | `config/igris_appearance.yaml` | 링크 `visuals` 스코프에 UsdPreviewSurface를 strongerThanDescendants로 바인딩(렌더링 전용) | `--no-appearance` 또는 `enabled: false` |
+| `igris_cameras.usda` | `config/igris_cameras.yaml` | 링크 자식 Camera prim(§10) | `--no-cameras` 또는 `enabled: false` |
 
-- 골반 고정은 **지지 상태**(균형 제어 아님). 검증: 12초, 위치 0.00mm·방향 ≤0.50°(허용치 1.0°), 팔 4관절 사인파 추종 확인(`igris.arm_test`).
+- 고정은 **지지 상태**(균형 제어 아님). 현재 기본(몸통 고정) 검증(8차): 12초, 위치 0.00 mm·방향 0.00°. 과거 골반 고정 때 보고한 '방향 ≤0.50°'는 앵커 쿼터니언 반올림이 만든 가짜 오차였다(8차에서 수정). 허용치 `hold_tolerance` 1.0°.
 - 외형은 **공식 스킨이 아닌 임시 근사 재질**(공식 사진 육안 참고, 출처는 YAML 머리말). 공식 외형·재질 파일 제공 여부 확인 전까지 수정·확정 보류.
 - 구현 메모: 레이어 mute/unmute·RigidPrim 뷰 추가는 PhysX 텐서 뷰를 무효화하므로, 전후 스크린샷 뒤 `world.reset()`으로 재초기화하고 고정 링크 포즈는 USD 변환에서 읽는다. 최종 배치·레이어 작성은 `world.stop()` 상태에서 한다(관절 프레임 불일치 경고 방지).
 
@@ -138,7 +140,7 @@ bash ~/igris_ws/scripts/run_igris_vla_scene.sh --secs 12 --hold 3600      # 기�
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 머리 좌안 | `…/IGRIS_C/Link_Neck_Pitch/LeftRgbCamera` | 640×480 | 433.3, 433.3, 320, 240 | 없음 | (0.095516, 0.026076, 0.121) 공식 그대로 | ROS 규약 (0.5,−0.5,0.5,−0.5)에 링크 z축 +14° | 0.05 / 100 |
 | 머리 우안 | `…/Link_Neck_Pitch/RightRgbCamera` | 640×480 | 433.3, 433.3, 320, 240 | 없음 | (0.095516, −0.026076, 0.121) 공식 그대로 | 〃 −14° | 0.05 / 100 |
-| 왼손바닥 | `…/Left_Hand/l_hand_camera_link` | 320×200 | 115.6696, 115.5467, 159.6695, 96.9483 (LEFT_WRIST_INTRINSIC) | 0.047115, −0.056155, 0, 0, 0.012162 | 공식 (−0.024420, 0.010317, 0.034793) → **적용 (−0.019605, 0.017160, 0.040269)** (광축 +10 mm) | world 규약 (0.281491, −0.813343, −0.479715, −0.170613) 공식 그대로 | **0.02** / 4 (공식 0.001) |
+| 왼손바닥 | `…/Left_Hand/l_hand_camera_link` | 320×200 | 115.6696, 115.5467, 159.6695, 96.9483 (LEFT_WRIST_INTRINSIC) | 0.047115, −0.056155, 0, 0, 0.012162 | 공식 (−0.024420, 0.010317, 0.034793) → **적용 (−0.019605, 0.017160, 0.040269)** (광축 +10 mm) | world 규약 (0.281491, −0.813343, −0.479715, −0.170613) 공식 **+ 카메라 z축 −20°**(11차 `tilt_yaw_deg`) | **0.02** / 4 (공식 0.001) |
 | 오른손바닥 | `…/Right_Hand/r_hand_camera_link` | 320×200 | 115.4599, 115.4226, 157.1594, 91.9294 (RIGHT_WRIST_INTRINSIC) | 0.044201, −0.057607, −0.000818, 0.000326, 0.012698 | 공식 (−0.024420, −0.010317, 0.034793) → **적용 (−0.019605, −0.017177, 0.040247)** | world 규약 (0.280192, 0.813790, −0.479987, 0.169854) 공식 그대로 | **0.02** / 4 |
 
 - 손 위치를 옮긴 근거: 공식 STL 시각 메시에는 눈·손바닥 구멍이 없고 공식 광학 중심 4개가 닫힌 셸 내부에 있다(`scripts/isaac/tools/camera_geometry_probe.py`, `data/isaac/camera_probe/`). 머리는 앞 셸까지 17.6–25.9 mm라 공식 near 0.05 m가 셸을 통과시키므로 무수정. 손은 5.7–8.1 mm(공식 near 0.001)라 셸 내부가 보여, 광축 방향 +10 mm(셸 표면 +2 mm)로 옮기고 near 0.02 m로 셸 가장자리(2 cm 이내)를 제거. 남는 자기 메시(2–3 cm, 손바닥 가장자리)는 화면 테두리 7–8%(`self_occlusion_frac`), +20 mm로 두면 1–2%로 줄지만 공식 extrinsic에서 더 멀어짐(YAML `axial_offset_m`).

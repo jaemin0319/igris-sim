@@ -1,6 +1,48 @@
-# CURRENT STATE — 2026-09-26 (11차 갱신: 1차 튜닝 — 손 카메라·거리)
+# CURRENT STATE — 2026-09-26 (현재 기준: 11차까지 반영)
 
 판정: PASS / FAIL / BLOCKED / NOT TESTED. 로그: `~/igris_ws/logs/`, 결과: `~/igris_ws/data/isaac/`(Git 제외), 요약본: `docs/results/`, 미리보기: `docs/img/`.
+작업 브랜치: `work/igris-camera-followup`(이후 작업 기록용). `main`은 11차 커밋 `033df6f`까지.
+
+## 요약 1 — 현재 채택 설정 (기본 실행: `bash ~/igris_ws/scripts/run_igris_vla_scene.sh --secs 12 --hold 3600`)
+
+| 항목 | 현재 기본값 | 설정 위치 | 도입 |
+| --- | --- | --- | --- |
+| 로봇 고정 | **몸통 `base_link` 월드 고정**(지지 상태, 균형 제어 아님). 골반 고정은 기본 아님(`fix.link: auto`) | `config/vla_scene.yaml` `igris.fix.link: root` | 8차 |
+| 기본 자세 | 어깨 pitch −0.35 · roll ±0.15 · yaw 0, 팔꿈치 −1.30, 손목 0, 다리 공식 init | `igris.init_joint_pos` | 8차 |
+| 고개 | 30° 아래(URDF 한계 ±30°, FixedJoint override) | `igris.head_pitch_deg: 30` | 8·9차 |
+| 장면·배치 | G1 자리 (−0.15, 0), yaw 90°, 작업대 앞 모서리까지 0.15 m | `g1_slot`, `igris.xy_offset: [0,0]` | 4차(11차 비교 후 유지) |
+| 머리 카메라 | 좌/우 640×480, fx=fy=433.3, 공식 위치, ±14° | `config/igris_cameras.yaml` `head` | 6차 |
+| 손 카메라 | 320×200 공식 내부 파라미터·왜곡, 광축 +10 mm, near 0.02. **왼손만 yaw −20°**(오른손 공식 회전) + 학습용 640×480 `train_extend` | `hands.left/right` | 6·11차 |
+| 모니터 | 하단 [HEAD STEREO L\|R][LEFT HAND][RIGHT HAND]; 손 셀 **표시만** 회전(왼 CW, 오른 CCW) | `scripts/isaac/igris_monitor.py` | 7·9차 |
+| 외형 | 임시 근사 재질(공식 스킨 아님, 수정·확정 보류) | `config/igris_appearance.yaml` | 5차 |
+| 동작 시험 | 기본 off(`--arm-test`로 켬) | `igris.arm_test.enabled: false` | 8차 |
+
+## 요약 2 — 현재 기본값 기준 검증 결과
+
+| 항목 | 판정 | 근거 |
+| --- | --- | --- |
+| Isaac Sim 5.1.0 설치, 기존 환경 자산(누락 0), IGRIS 로딩 | PASS | 4차, data/isaac/igris_vla_scene_gui2.json |
+| 몸통 고정 12초: 위치 0.00 mm·방향 0.00°, 자기 충돌 AABB 0, 작업대 겹침 0 | PASS | 8차, docs/results/igris_pose.json |
+| 고개 30°: 머리 카메라에 작업대 상판·양손(머그는 화면 밖) | PASS(작업대) | 8차 |
+| 카메라 4개 렌더·자세 간 갱신, 검은 화면 없음 | PASS | 6차, docs/results/igris_cameras.json |
+| 하단 모니터: 정지 유지·재생 갱신 | PASS(`--arm-test` 실행 시) / 기본 실행에서는 NOT TESTED | 7차, docs/results/igris_monitor.json |
+| 손 셀 표시 회전 == `np.rot90(원본)` | PASS | 9차 |
+| 왼손 카메라 yaw −20°: 데이터셋 15자세 자기 메시 0%, 작업공간 84% | PASS(headless 캡처) | 11차, docs/results/hand_camera_tuning.json |
+| 11차 값 적용 후 GUI 전체 창 스크린샷 | NOT TESTED | — |
+
+## 요약 3 — 미해결
+
+- 오른손 카메라: 검증 가능한 후보 없음(데이터셋에 오른팔 동작 자세 없음) → 공식 회전 유지.
+- 실기 카메라 파라미터(머리·손 내부 파라미터·왜곡, 스테레오 베이스라인, 손 카메라 장착 방향), 실기 목 pitch 값: 데이터셋에 없음 → 미확인.
+- 왼손 yaw −20°는 시뮬 가림 기준 선택이며 실기 장착과 같다는 증거는 없음.
+- 로봇–작업대 거리 0.15 m(현재) vs 0.25 m(대안) 최종 결정, 작업대 소품 배치.
+- 손가락 매핑(데이터셋 6채널 ↔ 시뮬 22 DOF), 공식 외형·재질 파일 여부.
+- 균형 제어·폐루프(LowCmd 반영) 없음. GMT 호환성 동적 대조(B부) 미완(2차 기록).
+- `config/vla_scene.yaml`의 `igris.fix` 주석이 아직 "골반 고정(igris_fix_pelvis.usda)"로 남아 있음(값은 `link: root`로 정상). 코드·설정 무변경 원칙에 따라 이번에는 문서만 정리.
+
+---
+
+(이하 단계별 기록 — 최신순. 과거 실험 기록과 근거 파일은 그대로 보존하며, 당시 기본값은 위 요약과 다를 수 있다.)
 
 ## 11차 — 1차 튜닝 (기준: 동일 15자세, 회전 없는 원본 프레임) — 상세: docs/DATASET_SIM_CAMERA_DIAGNOSIS.md 하단 "1차 튜닝 결과"
 
@@ -134,6 +176,8 @@
 (이하 5차 갱신 기록)
 
 ## 5차 — 골반 고정·외형 레이어 (사용자 화면 확인 후 확정)
+
+> 참고: 이 단계의 골반 고정은 8차에서 몸통(`base_link`) 고정으로 대체되어 현재 기본값이 아니다.
 
 실행: `bash ~/igris_ws/scripts/run_igris_vla_scene.sh --secs 12 --hold 3600` · 끄기: `--no-fix`, `--no-appearance` · 고정 링크 변경: `--fix-link root|<링크명>`
 

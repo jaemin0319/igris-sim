@@ -30,25 +30,31 @@ ISAAC_ROOT=/mnt/isaac bash scripts/20_install_isaac.sh
 bash scripts/30_fetch_vla_scene.sh download && bash scripts/30_fetch_vla_scene.sh list && bash scripts/30_fetch_vla_scene.sh extract
 bash scripts/30_fetch_vla_scene.sh forget            # gpg-agent 메모리의 암호 캐시 제거
 bash scripts/02_assets_manifest.sh verify            # 추출 자산 포함 84개 SHA-256 대조
-# 7) 기존 환경 + IGRIS-C 1대 (GUI, 5초 물리 후 초기 배치로 되돌려 창 유지)
+# 7) 기존 환경 + IGRIS-C 1대 (GUI, 12초 물리 후 초기 배치로 되돌려 창 유지)
 bash scripts/run_igris_vla_scene.sh --secs 12 --hold 3600   # 기본: 몸통(base_link) 월드 고정(지지 상태, 균형 제어 아님) + 팔 접은 자세 + 고개 30° 아래 + 임시 근사 외형 + RGB 카메라 4개 + 하단 모니터. 끄기: --no-fix / --no-appearance / --no-cameras / --no-monitor · 동작 시험: --arm-test
 #    카메라 캡처: data/isaac/cameras/<tag>_{static,moving,end}_{head_left,head_right,hand_left,hand_right}.png, *_cam_head_1280x480.png, *_quad_preview.png
 #    설치 확인용 빈 장면: bash scripts/run_isaac_igris.sh --secs 5 --hold 60
 ```
 
-## 기준 화면(이 PC에서 실제 실행한 결과)
+## 현재 기본값과 기준 화면
 
-![existing environment + IGRIS-C](docs/img/igris_vla_scene_init_diag.jpg)
+현재 기본값(상세·근거: [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) 맨 위 요약):
+- **몸통(`base_link`) 월드 고정** — 지지 상태이며 균형 제어가 아니다. 5–7차에 쓰던 골반(`Link_Waist_Pitch`) 고정은 몸통 흔들림 때문에 8차에서 기본값에서 뺐다(`fix.link: auto`로만 재현). `--no-fix`에서는 제어기가 없어 1–2초 내에 넘어진다.
+- 팔 접은 대칭 자세, 고개 30° 아래(URDF 한계 ±30°).
+- RGB 카메라 4개(머리 좌/우 눈, 좌/우 손바닥) + 하단 실시간 모니터. 모니터의 손 셀만 표시 회전(왼 CW 90°, 오른 CCW 90°), 원본 프레임은 회전하지 않음. 왼손 카메라는 11차 튜닝값 yaw −20°.
+- 외형은 공식 스킨이 아닌 임시 근사 재질.
 
-초기 배치(물리 시작 전, 4차 시점·외형 적용 전). 기본 설정은 골반을 월드에 고정한 지지 상태이며, `--no-fix`에서는 제어기가 없어 1–2초 내에 넘어진다.
+![current default](docs/img/igris_monitor_rot_window.jpg)
 
-임시 근사 외형(공식 스킨 아님) 전/후: `docs/img/igris_before_appearance_diag.jpg`, `docs/img/igris_after_appearance_diag.jpg`
+9차 실행 화면(몸통 고정·팔 접음·고개 30°·하단 모니터). 11차의 왼손 카메라 yaw −20°는 headless 캡처로만 확인했고, 적용 후 GUI 전체 창 스크린샷은 아직 없다.
 
-기본 자세(몸통 고정·팔 접음·고개 30° 아래) 전체 창: `docs/img/igris_pose_window.jpg`, 측면: `docs/img/igris_pose_side.jpg`
-
-GUI 하단 실시간 모니터(머리 스테레오 L|R · 왼손 · 오른손): `docs/img/igris_monitor_window.jpg`
-
-RGB 카메라 4개(좌상 머리 좌안 · 우상 머리 우안 · 좌하 왼손바닥 · 우하 오른손바닥), 정지/동작 자세: `docs/img/igris_cameras_static_quad.jpg`, `docs/img/igris_cameras_moving_quad.jpg` — 설정·근거는 docs/SETUP.md §10
+과거 단계 화면(근거 보존):
+- 4차 초기 배치(외형·자세·카메라 적용 전, 고정 없음): `docs/img/igris_vla_scene_init_diag.jpg`
+- 5차 임시 외형 전/후(당시 골반 고정): `docs/img/igris_before_appearance_diag.jpg`, `docs/img/igris_after_appearance_diag.jpg`
+- 6차 카메라 4개 정지/동작(당시 팔 내린 자세): `docs/img/igris_cameras_static_quad.jpg`, `docs/img/igris_cameras_moving_quad.jpg` — 설정·근거 docs/SETUP.md §10
+- 7차 하단 모니터(손 셀 회전 전): `docs/img/igris_monitor_window.jpg`
+- 8차 기본 자세: `docs/img/igris_pose_window.jpg`, 측면 `docs/img/igris_pose_side.jpg`
+- 10–11차 데이터셋 비교·튜닝: `docs/img/dataset_compare/`, `docs/img/tuning/`
 
 ## 구성
 
@@ -56,7 +62,7 @@ RGB 카메라 4개(좌상 머리 좌안 · 우상 머리 우안 · 좌하 왼손
 | --- | --- | --- |
 | `scripts/` | 설치·빌드·검증·실행 스크립트, `scripts/isaac/igris_min_scene.py` | 포함 |
 | `config/` | 루프백 CycloneDDS XML, GMT 시험용 설정 사본 | 포함 |
-| `docs/` | SETUP, CURRENT_STATE, pip freeze | 포함 |
+| `docs/` | SETUP, CURRENT_STATE, DATASET_SIM_CAMERA_DIAGNOSIS, `results/`(검증 요약 JSON), `img/`, pip freeze | 포함 |
 | `repos.lock`, `assets.sha256` | 외부 저장소 커밋, 자산 SHA-256 | 포함 |
 | `src/`, `envs/`, `opt/`, `downloads/`, `data/`, `logs/`, `ros2_ws/`, `build/` | 외부 소스·설치본·산출물 | **제외** |
 | `config/vla_scene.yaml` | 기존 장면 정의(배치·조명·재질·G1 자리·IGRIS 배치 규칙, 출처 sha256) | 포함 |

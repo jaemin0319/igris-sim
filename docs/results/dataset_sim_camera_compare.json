@@ -1,0 +1,207 @@
+{
+ "joint_map": {
+  "left_shoulder_pitch.pos": "Joint_Shoulder_Pitch_Left",
+  "left_shoulder_roll.pos": "Joint_Shoulder_Roll_Left",
+  "left_shoulder_yaw.pos": "Joint_Shoulder_Yaw_Left",
+  "left_elbow_pitch.pos": "Joint_Elbow_Pitch_Left",
+  "left_wrist_yaw.pos": "Joint_Wrist_Yaw_Left",
+  "left_wrist_roll.pos": "Joint_Wrist_Roll_Left",
+  "left_wrist_pitch.pos": "Joint_Wrist_Pitch_Left",
+  "right_shoulder_pitch.pos": "Joint_Shoulder_Pitch_Right",
+  "right_shoulder_roll.pos": "Joint_Shoulder_Roll_Right",
+  "right_shoulder_yaw.pos": "Joint_Shoulder_Yaw_Right",
+  "right_elbow_pitch.pos": "Joint_Elbow_Pitch_Right",
+  "right_wrist_yaw.pos": "Joint_Wrist_Yaw_Right",
+  "right_wrist_roll.pos": "Joint_Wrist_Roll_Right",
+  "right_wrist_pitch.pos": "Joint_Wrist_Pitch_Right",
+  "waist_yaw.pos": "Joint_Waist_Yaw",
+  "waist_roll.pos": "Joint_Waist_Roll",
+  "waist_pitch.pos": "Joint_Waist_Pitch"
+ },
+ "unmapped_dataset_joints": [
+  "left_hand_thumb.pos",
+  "left_hand_index.pos",
+  "left_hand_middle.pos",
+  "left_hand_ring.pos",
+  "left_hand_pinky.pos",
+  "left_hand_spread.pos"
+ ],
+ "summary": {
+  "poses": 15,
+  "hand_left_selfocc_mean": 0.267,
+  "hand_right_selfocc_mean": 0.402,
+  "hand_left_depth_median_mean_m": 0.167,
+  "hand_right_depth_median_mean_m": 0.039,
+  "max_joint_err_rad_max": 0.0945
+ },
+ "per_pose": [
+  {
+   "episode": 0,
+   "label": "start",
+   "dataset_index": 0,
+   "max_joint_err_rad": 0.043,
+   "hand_left_selfocc": 0.551,
+   "hand_left_depth_median_m": 0.024,
+   "hand_right_selfocc": 0.536,
+   "hand_right_depth_median_m": 0.029,
+   "head_left_depth_median_m": 2.855
+  },
+  {
+   "episode": 0,
+   "label": "left_arm_forward",
+   "dataset_index": 94,
+   "max_joint_err_rad": 0.0405,
+   "hand_left_selfocc": 0.189,
+   "hand_left_depth_median_m": 0.174,
+   "hand_right_selfocc": 0.559,
+   "hand_right_depth_median_m": 0.028,
+   "head_left_depth_median_m": 2.855
+  },
+  {
+   "episode": 0,
+   "label": "left_grip_closed",
+   "dataset_index": 104,
+   "max_joint_err_rad": 0.0415,
+   "hand_left_selfocc": 0.211,
+   "hand_left_depth_median_m": 0.215,
+   "hand_right_selfocc": 0.557,
+   "hand_right_depth_median_m": 0.028,
+   "head_left_depth_median_m": 2.855
+  },
+  {
+   "episode": 2,
+   "label": "start",
+   "dataset_index": 463,
+   "max_joint_err_rad": 0.0427,
+   "hand_left_selfocc": 0.551,
+   "hand_left_depth_median_m": 0.024,
+   "hand_right_selfocc": 0.517,
+   "hand_right_depth_median_m": 0.029,
+   "head_left_depth_median_m": 2.855
+  },
+  {
+   "episode": 2,
+   "label": "left_arm_forward",
+   "dataset_index": 771,
+   "max_joint_err_rad": 0.0825,
+   "hand_left_selfocc": 0.111,
+   "hand_left_depth_median_m": 0.336,
+   "hand_right_selfocc": 0.478,
+   "hand_right_depth_median_m": 0.031,
+   "head_left_depth_median_m": 2.855
+  },
+  {
+   "episode": 2,
+   "label": "left_grip_closed",
+   "dataset_index": 576,
+   "max_joint_err_rad": 0.0566,
+   "hand_left_selfocc": 0.189,
+   "hand_left_depth_median_m": 0.175,
+   "hand_right_selfocc": 0.413,
+   "hand_right_depth_median_m": 0.036,
+   "head_left_depth_median_m": 2.855
+  },
+  {
+   "episode": 4,
+   "label": "start",
+   "dataset_index": 1150,
+   "max_joint_err_rad": 0.0426,
+   "hand_left_selfocc": 0.552,
+   "hand_left_depth_median_m": 0.024,
+   "hand_right_selfocc": 0.281,
+   "hand_right_depth_median_m": 0.057,
+   "head_left_depth_median_m": 2.855
+  },
+  {
+   "episode": 4,
+   "label": "left_arm_forward",
+   "dataset_index": 1339,
+   "max_joint_err_rad": 0.0901,
+   "hand_left_selfocc": 0.075,
+   "hand_left_depth_median_m": 0.31,
+   "hand_right_selfocc": 0.302,
+   "hand_right_depth_median_m": 0.053,
+   "head_left_depth_median_m": 2.855
+  },
+  {
+   "episode": 4,
+   "label": "left_grip_closed",
+   "dataset_index": 1251,
+   "max_joint_err_rad": 0.0533,
+   "hand_left_selfocc": 0.155,
+   "hand_left_depth_median_m": 0.129,
+   "hand_right_selfocc": 0.259,
+   "hand_right_depth_median_m": 0.054,
+   "head_left_depth_median_m": 2.855
+  },
+  {
+   "episode": 5,
+   "label": "start",
+   "dataset_index": 1499,
+   "max_joint_err_rad": 0.0506,
+   "hand_left_selfocc": 0.551,
+   "hand_left_depth_median_m": 0.024,
+   "hand_right_selfocc": 0.454,
+   "hand_right_depth_median_m": 0.034,
+   "head_left_depth_median_m": 2.855
+  },
+  {
+   "episode": 5,
+   "label": "left_arm_forward",
+   "dataset_index": 1649,
+   "max_joint_err_rad": 0.0915,
+   "hand_left_selfocc": 0.076,
+   "hand_left_depth_median_m": 0.23,
+   "hand_right_selfocc": 0.359,
+   "hand_right_depth_median_m": 0.04,
+   "head_left_depth_median_m": 2.855
+  },
+  {
+   "episode": 5,
+   "label": "left_grip_closed",
+   "dataset_index": 1629,
+   "max_joint_err_rad": 0.0945,
+   "hand_left_selfocc": 0.148,
+   "hand_left_depth_median_m": 0.413,
+   "hand_right_selfocc": 0.396,
+   "hand_right_depth_median_m": 0.038,
+   "head_left_depth_median_m": 2.721
+  },
+  {
+   "episode": 8,
+   "label": "start",
+   "dataset_index": 2103,
+   "max_joint_err_rad": 0.0506,
+   "hand_left_selfocc": 0.41,
+   "hand_left_depth_median_m": 0.038,
+   "hand_right_selfocc": 0.298,
+   "hand_right_depth_median_m": 0.044,
+   "head_left_depth_median_m": 2.855
+  },
+  {
+   "episode": 8,
+   "label": "left_arm_forward",
+   "dataset_index": 2265,
+   "max_joint_err_rad": 0.0937,
+   "hand_left_selfocc": 0.078,
+   "hand_left_depth_median_m": 0.235,
+   "hand_right_selfocc": 0.326,
+   "hand_right_depth_median_m": 0.043,
+   "head_left_depth_median_m": 2.855
+  },
+  {
+   "episode": 8,
+   "label": "left_grip_closed",
+   "dataset_index": 2206,
+   "max_joint_err_rad": 0.0447,
+   "hand_left_selfocc": 0.16,
+   "hand_left_depth_median_m": 0.157,
+   "hand_right_selfocc": 0.299,
+   "hand_right_depth_median_m": 0.045,
+   "head_left_depth_median_m": 2.855
+  }
+ ],
+ "dataset": "igris_c_trainer sample_dataset (10 ep, 2467 frames, 20 fps; cam_head 1280x480, cam_left/right 640x480)",
+ "dataset_copy": "/mnt/isaac/reference/igris_c_trainer/",
+ "composites": "data/isaac/dataset_compare/*_head.png, *_hands.png (docs/img/dataset_compare/ 축소본 6장)"
+}

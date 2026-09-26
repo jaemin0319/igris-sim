@@ -20,6 +20,8 @@ ap.add_argument("--arm-test", dest="arm_test", action="store_true", default=None
 ap.add_argument("--cameras", dest="cameras", action="store_true", default=None); ap.add_argument("--no-cameras", dest="cameras", action="store_false")
 ap.add_argument("--viewport-camera", default="scene", help="GUI viewport: scene | head_left | head_right | hand_left | hand_right")
 ap.add_argument("--no-monitor", dest="monitor", action="store_false", default=True, help="아래쪽 [머리 스테레오][왼손][오른손] 실시간 모니터 끄기(GUI 전용)")
+ap.add_argument("--pose-file", default=None, help="데이터셋 자세 JSON({names, poses:[{label, state{name:rad}}]})를 순서대로 재현하며 카메라 캡처(진단용; 설정 불변)")
+ap.add_argument("--head-pitch", type=float, default=None, help="이번 실행에서만 head_pitch_deg 를 덮어씀(YAML 기본값 불변, 진단용)")
 a = ap.parse_args(); os.makedirs(a.out, exist_ok=True)
 import yaml
 cfg = yaml.safe_load(open(a.config))
@@ -160,7 +162,7 @@ if fix_on:
 else: art_root_path = art_root_prim.GetPath().pathString
 res["pelvis_fix"] = fix_res
 # ---- 고개 숙임: Joint_Neck_Pitch 가 FixedJoint(DOF 없음)이므로 별도 레이어에서 관절 프레임(localRot0)과 Link_Neck_Pitch xform 을 같은 y축 회전으로 override
-HP = float(ig.get("head_pitch_deg", 0.0)); head_res = {"requested_deg": HP}
+HP = float(ig.get("head_pitch_deg", 0.0)) if a.head_pitch is None else float(a.head_pitch); head_res = {"requested_deg": HP, "cli_override": a.head_pitch is not None}
 if abs(HP) > 1e-6:
     poseL = new_sublayer("igris_head_pose.usda"); res["layers"]["head_pose"] = poseL.identifier
     nj = next((p for p in Usd.PrimRange(robot) if p.GetName() == "Joint_Neck_Pitch"), None); nl = next((p for p in Usd.PrimRange(robot) if p.GetName() == "Link_Neck_Pitch"), None)
@@ -330,6 +332,26 @@ if not a.freeze:
     if vp is not None: shot("after_physics", cam["eye"], cam["target"])
 res["vram_mib"] = {"peak_during_run": peak, "total": vram()[1]}; res["screenshots"] = shots; res["elapsed_s"] = round(time.time() - t0, 1)
 js = os.path.join(a.out, f"igris_vla_scene_{a.tag}.json"); json.dump(res, open(js, "w"), indent=1, default=str); print("RESULT_JSON", js, flush=True)
+if a.pose_file and cam_on:                                                                          # 데이터셋 관절값 재현 캡처(진단용)
+    PF = json.load(open(os.path.expanduser(a.pose_file))); DS2ISAAC = {}
+    for n in PF["names"]:
+        m_ = re.fullmatch(r"(left|right)_(shoulder|elbow|wrist)_(pitch|roll|yaw)\.pos", n); w_ = re.fullmatch(r"waist_(yaw|roll|pitch)\.pos", n)
+        if m_: DS2ISAAC[n] = f"Joint_{m_.group(2).capitalize()}_{m_.group(3).capitalize()}_{m_.group(1).capitalize()}"
+        elif w_: DS2ISAAC[n] = f"Joint_Waist_{w_.group(1).capitalize()}"
+    unmapped = [n for n in PF["names"] if n not in DS2ISAAC]; pose_dir = os.path.join(a.out, "dataset_poses", a.tag); os.makedirs(pose_dir, exist_ok=True); pose_log = []
+    world.play()
+    for pz in PF["poses"]:
+        q = q0.copy(); applied = {}
+        for n, v in pz["state"].items():
+            jn = DS2ISAAC.get(n)
+            if jn in names: q[names.index(jn)] = float(v); applied[jn] = float(v)
+        art.set_joint_positions(q); art.set_joint_velocities(np.zeros_like(q)); art.apply_action(ArticulationAction(joint_positions=q))
+        for _ in range(25): world.step(render=True); mon()
+        qm = art.get_joint_positions(); err = max(abs(float(qm[names.index(j)]) - v) for j, v in applied.items()) if applied else None
+        fr = IC.capture(cam_sensors, cam_specs, 0.03); files = IC.save(fr, cam_specs, pose_dir, f'ep{pz["episode"]}_{pz["label"]}_f{pz["index"]}', CAMCFG)
+        pose_log.append({"episode": pz["episode"], "label": pz["label"], "dataset_index": pz["index"], "applied_joints": len(applied), "max_joint_err_rad": None if err is None else round(err, 4), "files": {k: os.path.basename(v) for k, v in files.items()}, "stats": {n: {k: v for k, v in st.items() if k != "_depth"} for n, (_, st) in fr.items()}})
+    world.pause(); reset_pose()
+    res["dataset_pose_capture"] = {"pose_file": a.pose_file, "head_pitch_deg": HP, "joint_map": DS2ISAAC, "unmapped_dataset_joints": unmapped, "poses": pose_log, "dir": pose_dir}; json.dump(res, open(js, "w"), indent=1, default=str); print("[pose_capture]", len(pose_log), "poses ->", pose_dir, flush=True)
 if a.hold > 0:                                                                                      # 사용자가 직접 확인: 초기 배치로 되돌려 멈춘 채 창을 열어 둔다(Play로 물리 재생 가능)
     reset_pose(); world.pause(); set_camera_view(eye=cam["eye"], target=cam["target"], camera_prim_path=cam["prim"])
     if a.viewport_camera != "scene" and vp is not None and a.viewport_camera in VP_CHOICE: vp.camera_path = VP_CHOICE[a.viewport_camera]; print("[viewport]", VP_CHOICE[a.viewport_camera], flush=True)

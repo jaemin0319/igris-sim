@@ -1,6 +1,25 @@
-# CURRENT STATE — 2026-09-26 (9차 갱신: 손 모니터 회전, 고개 각도 확정)
+# CURRENT STATE — 2026-09-26 (10차 갱신: 데이터셋 vs 시뮬 카메라 진단)
 
 판정: PASS / FAIL / BLOCKED / NOT TESTED. 로그: `~/igris_ws/logs/`, 결과: `~/igris_ws/data/isaac/`(Git 제외), 요약본: `docs/results/`, 미리보기: `docs/img/`.
+
+## 10차 — igris_c_trainer sample_dataset 영상 vs 시뮬 카메라 비교·진단 (설정 변경 없음)
+
+문서: **docs/DATASET_SIM_CAMERA_DIAGNOSIS.md** (차이별 관찰/원인/확인/수정/확신 표, 우선순위, 튜닝 순서). 요약 JSON: docs/results/dataset_sim_camera_compare.json.
+
+| 항목 | 판정 | 근거 |
+| --- | --- | --- |
+| 데이터셋 로컬 확보: `~/Downloads/igris_c_trainer.zip` → `/mnt/isaac/reference/igris_c_trainer/`(65 MB, 10 ep/2,467 프레임/20 fps, state 23ch = 팔 14+허리 3+왼손 손가락 6) | PASS | representative_poses.json |
+| 대표 자세 15개(5 ep × start/왼팔 전방/왼손 쥠)의 관절값을 시뮬에 재현(17채널 매핑, 손가락 6채널 미대응) — 진단용 `--pose-file`/`--head-pitch` 옵션 추가(기본값 불변) | PASS | data/isaac/dataset_poses/dscmp_h{30,0}/ |
+| 원본 프레임 나란히 비교 30장(머리: 데이터셋/30°/0°, 손: 데이터셋 640×480/공식 320×200/train_extend) — 모니터 회전은 미적용 | PASS | data/isaac/dataset_compare/, docs/img/dataset_compare/ |
+| 핵심 차이: ① 시뮬 손 카메라가 같은 관절값에서 자기 손 셸을 봄(자기 메시 평균 왼 27%/오른 40%, 데이터셋은 천장·바닥 등 외부) ② 로봇–작업대 거리(시뮬 0.16 m vs 데이터셋 ≈0.4–0.5 m) ③ 머리 화각·왜곡(데이터셋 광각·배럴, 시뮬 73°×58° 핀홀) ④ 손 영상 90° 회전 장착 정황 | 관찰 | 진단 문서 #1–#9 |
+| 실기 내부 파라미터·왜곡·베이스라인·목 pitch·손 카메라 회전 장착 | **미확인**(데이터셋에 없음) | 〃 |
+
+### 권장 순서(한 변수씩)
+손 카메라 `rot` 90° 스윕 → `axial_offset_m` → 손목 부호 → 로봇 후퇴 0.3 m → 소품 배치 → 실기 내부 파라미터 확보 후 머리 교체 → 목 pitch 스윕. 이번 단계에서는 어느 것도 적용하지 않음.
+
+---
+
+(이하 9차 갱신 기록)
 
 ## 9차 — 손 모니터 셀 회전(표시 전용), 고개 30° 유지
 

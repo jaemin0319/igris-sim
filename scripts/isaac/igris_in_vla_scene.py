@@ -360,6 +360,7 @@ if a.hold > 0:                                                                  
     if monitor is not None:
         for _ in range(20): app.update(); mon()
         try:
+            res.setdefault("monitor", {})["display_rotation_check"] = monitor.verify_rotation()
             import igris_monitor as IM2; wp_ = os.path.join(a.out, "monitor", f"{a.tag}_window_pose.png"); os.makedirs(os.path.dirname(wp_), exist_ok=True); IM2.capture_app_window(wp_, app, frames=4); res.setdefault("monitor", {})["window_screenshot_pose"] = wp_
         except Exception as ex: res.setdefault("monitor", {})["window_shot_pose_error"] = str(ex)
         json.dump(res, open(js, "w"), indent=1, default=str)

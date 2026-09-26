@@ -152,3 +152,4 @@ bash ~/igris_ws/scripts/run_igris_vla_scene.sh --secs 12 --hold 3600      # 기�
 - 팔: `init_joint_pos` 어깨 pitch −0.35 / roll ±0.15(바깥) / yaw 0, 팔꿈치 −1.30, 손목 0 (축·한계: 공식 URDF `igris_c_v2_wrist_hand_isaac.urdf`).
 - 고개: `head_pitch_deg: 30` → 레이어 `igris_head_pose.usda`(Joint_Neck_Pitch는 FixedJoint라 관절 목표 불가; 관절 프레임+링크 xform 회전 override). 0이면 레이어 미생성.
 - `arm_test.enabled: false` 기본. `--arm-test`로 사인파 동작·모니터 갱신 검증.
+- 모니터 손 셀은 표시만 회전(왼손 CW 90°, 오른손 CCW 90°; `igris_monitor.DISPLAY_ROT`). 원본 캡처·카메라 설정은 회전하지 않는다. 고개는 URDF 한계 ±30° 안에서만(45° 요청 시에도 30° 유지).

@@ -1,6 +1,20 @@
-# CURRENT STATE — 2026-09-26 (8차 갱신: 몸통 고정 + 기본 자세 + 고개 숙임)
+# CURRENT STATE — 2026-09-26 (9차 갱신: 손 모니터 회전, 고개 각도 확정)
 
 판정: PASS / FAIL / BLOCKED / NOT TESTED. 로그: `~/igris_ws/logs/`, 결과: `~/igris_ws/data/isaac/`(Git 제외), 요약본: `docs/results/`, 미리보기: `docs/img/`.
+
+## 9차 — 손 모니터 셀 회전(표시 전용), 고개 30° 유지
+
+| 항목 | 판정 | 근거 |
+| --- | --- | --- |
+| 모니터 표시 회전: 왼손 셀 시계방향 90°(`np.rot90(k=-1)`), 오른손 셀 반시계 90°(`k=+1`). 카메라 prim·광학·원본 캡처(`data/isaac/cameras/*`)·학습 출력은 무변경. 셀 라벨 `200x320 CW90 / CCW90`, 종횡비 유지, 도킹 폭 재조정 | PASS | scripts/isaac/igris_monitor.py `DISPLAY_ROT` |
+| 회전 검증: 표시 셀 == `np.rot90(원본 센서 프레임, k)` 픽셀 동일(좌·우 모두 `equal: True`, 표시 320×200→200×320) | PASS | data/isaac/igris_vla_scene_rot.json `monitor.display_rotation_check` |
+| 고개 각도: 목표 45° → **30° 유지**. 근거: 공식 URDF `igris_c_v2_wrist_hand_isaac.urdf` `Joint_Neck_Pitch` limit ±0.523598776 rad(=±30°); USD에서는 FixedJoint(DOF 없음)라 한계는 URDF 값을 기준으로 함. 한계 초과를 위한 추가 프레임/레이어 회전은 하지 않음 | PASS(30°) | config/vla_scene.yaml `head_pitch_deg`, 8차 `head_pitch` |
+| GUI 확인·전체 창 스크린샷: 양손 셀 회전 방향(왼손 CW, 오른손 CCW: 반대쪽 손이 각각 하단 안쪽에 대칭으로 보임), 고개 30° 아래(머리 카메라에 작업대 상판·양손) | PASS | data/isaac/monitor/rot_window_pose.png, docs/img/igris_monitor_rot_window.jpg |
+| 몸통 고정 유지: 방향 오차 0.00° | PASS | 〃 |
+
+---
+
+(이하 8차 갱신 기록)
 
 ## 8차 — 몸통(base_link) 월드 고정, 팔 접은 대칭 자세, 고개 30° 아래
 

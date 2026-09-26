@@ -4,12 +4,15 @@ G1(vla_ws/unitree_sim_isaaclab sim_main.py '3-camera bottom monitor')의 방식(
 import asyncio, os
 import numpy as np
 LABELS = {"head": "HEAD STEREO (L | R)", "left": "LEFT HAND", "right": "RIGHT HAND"}
+DISPLAY_ROT = {"head": 0, "left": -1, "right": 1}   # np.rot90 k: -1 = 시계방향 90°(왼손), +1 = 반시계 90°(오른손). 표시 전용 — 카메라 prim·광학·캡처·학습 데이터 무변경
+ROT_TEXT = {0: "", -1: " CW90", 1: " CCW90"}
 class CameraMonitor:
     def __init__(self, sensors, specs, bottom_fraction=0.30):
         import omni.ui as ui
         self.ui = ui; self.sensors = sensors; self.specs = {s["role"]: s for s in specs if s["output"] == "official"}
         self.names = {"head": (self.specs["head_left"]["name"], self.specs["head_right"]["name"]), "left": (self.specs["hand_left"]["name"],), "right": (self.specs["hand_right"]["name"],)}
-        self.sizes = {"head": (self.specs["head_left"]["W"] * 2, self.specs["head_left"]["H"]), "left": (self.specs["hand_left"]["W"], self.specs["hand_left"]["H"]), "right": (self.specs["hand_right"]["W"], self.specs["hand_right"]["H"])}
+        raw = {"head": (self.specs["head_left"]["W"] * 2, self.specs["head_left"]["H"]), "left": (self.specs["hand_left"]["W"], self.specs["hand_left"]["H"]), "right": (self.specs["hand_right"]["W"], self.specs["hand_right"]["H"])}
+        self.sizes = {k: ((h, w) if DISPLAY_ROT[k] % 2 else (w, h)) for k, (w, h) in raw.items()}   # 회전 후 표시 해상도(가로, 세로)
         self.providers = {}; self.windows = {}; self.last = {}; self.gpu_keep = {}; self.frame = 0; self.docked = None
         for key in ("head", "left", "right"):
             W, H = self.sizes[key]; prov = ui.DynamicTextureProvider(f"igris_monitor_{key}"); self.providers[key] = prov
@@ -17,7 +20,7 @@ class CameraMonitor:
             win = ui.Window(LABELS[key], width=W // 2, height=H // 2 + 30, flags=ui.WINDOW_FLAGS_NO_SCROLLBAR | ui.WINDOW_FLAGS_NO_COLLAPSE)
             with win.frame:
                 with ui.VStack(spacing=2):
-                    ui.Label(f"{LABELS[key]}  {W}x{H}", height=18, style={"font_size": 16, "color": 0xFF00FF00, "margin": 4})
+                    ui.Label(f"{LABELS[key]}  {W}x{H}{ROT_TEXT[DISPLAY_ROT[key]]}", height=18, style={"font_size": 16, "color": 0xFF00FF00, "margin": 4})
                     ui.ImageWithProvider(prov, fill_policy=ui.IwpFillPolicy.IWP_PRESERVE_ASPECT_FIT, style={"alignment": ui.Alignment.CENTER})   # 종횡비 유지
             self.windows[key] = win
         asyncio.ensure_future(self._dock(bottom_fraction))
@@ -28,7 +31,7 @@ class CameraMonitor:
         for _ in range(3): await app.next_update_async()
         main = get_active_viewport_window(); title = getattr(main, "title", None) or "Viewport"
         r1 = ui.dock_window_in_window(LABELS["head"], title, ui.DockPosition.BOTTOM, frac); await app.next_update_async()
-        r2 = ui.dock_window_in_window(LABELS["left"], LABELS["head"], ui.DockPosition.RIGHT, 0.40); await app.next_update_async()   # 폭 비율: head 8:3 ≈ 60%, 손 각 20%
+        r2 = ui.dock_window_in_window(LABELS["left"], LABELS["head"], ui.DockPosition.RIGHT, 0.34); await app.next_update_async()   # 폭 비율: head ≈ 66%, 세로로 회전된 손 각 ≈ 17%
         r3 = ui.dock_window_in_window(LABELS["right"], LABELS["left"], ui.DockPosition.RIGHT, 0.50); await app.next_update_async()
         for w in self.windows.values(): w.dock_tab_bar_visible = False
         self.docked = (r1, r2, r3); print("[monitor] docked under", title, self.docked, flush=True)
@@ -39,7 +42,9 @@ class CameraMonitor:
             rgba = self.sensors[n].get_rgba()
             if rgba is None or np.asarray(rgba).size == 0: return None
             ims.append(np.asarray(rgba)[..., :4])
-        im = np.ascontiguousarray(np.hstack(ims) if len(ims) > 1 else ims[0], dtype=np.uint8); im[..., 3] = 255; return im
+        im = np.hstack(ims) if len(ims) > 1 else ims[0]
+        if DISPLAY_ROT[key]: im = np.rot90(im, DISPLAY_ROT[key])
+        im = np.ascontiguousarray(im, dtype=np.uint8); im[..., 3] = 255; return im
     def update(self, every=1):
         self.frame += 1
         if self.frame % every: return
@@ -49,6 +54,13 @@ class CameraMonitor:
             H, W = im.shape[:2]; prov.set_data_array(im, [W, H]); self.gpu_keep[key] = im   # DynamicTextureProvider: 배열 업로드(ui_provider_test*.png 로 확인한 방식)
             if self.frame <= 2: print(f"[monitor] {key} frame shape={im.shape} dtype={im.dtype} contiguous={im.flags['C_CONTIGUOUS']}", flush=True)
             self.last[key] = im[..., :3].copy()
+    def verify_rotation(self):
+        """표시 셀 == np.rot90(원본 센서 프레임, k) 인지 확인(회전은 표시 전용임을 증명). 반환: {cell: {"k": k, "equal": bool, "display_shape": [...], "raw_shape": [...]}}"""
+        out = {}
+        for key in ("left", "right"):
+            raw = np.asarray(self.sensors[self.names[key][0]].get_rgba())[..., :3]; disp = self.last.get(key)
+            out[key] = {"k": DISPLAY_ROT[key], "raw_shape": list(raw.shape), "display_shape": None if disp is None else list(disp.shape), "equal": bool(disp is not None and np.array_equal(np.rot90(raw, DISPLAY_ROT[key]), disp))}
+        return out
     def snapshot(self):  # 검증용: 현재 모니터 셀의 픽셀 통계
         return {k: {"mean": round(float(v.mean()), 1), "std": round(float(v.std()), 1), "dark_frac": round(float((v.max(-1) < 8).mean()), 3), "shape": list(v.shape)} for k, v in self.last.items()}
     def diff(self, other):

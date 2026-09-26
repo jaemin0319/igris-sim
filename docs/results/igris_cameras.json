@@ -1,0 +1,1361 @@
+{
+ "run_tag": "cams",
+ "config": "~/igris_ws/config/igris_cameras.yaml",
+ "specs": [
+  {
+   "role": "head_left",
+   "name": "LeftRgbCamera",
+   "link": "Link_Neck_Pitch",
+   "W": 640,
+   "H": 480,
+   "intr": [
+    433.3,
+    433.3,
+    320.0,
+    240.0
+   ],
+   "dist": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "clip": [
+    0.05,
+    100.0
+   ],
+   "official_pos": [
+    0.095516,
+    0.026076,
+    0.121
+   ],
+   "pos": [
+    0.095516,
+    0.026076,
+    0.121
+   ],
+   "axial_offset_m": 0.0,
+   "rot_conv": [
+    0.557208,
+    -0.557208,
+    0.435338,
+    -0.435338
+   ],
+   "convention": "ros",
+   "q_usd": [
+    0.557208,
+    0.557208,
+    -0.435338,
+    -0.435338
+   ],
+   "optical_axis_link": [
+    0.9703,
+    0.2419,
+    0.0
+   ],
+   "output": "official",
+   "hfov_deg": 72.9,
+   "vfov_deg": 58.0,
+   "prim_path": "/World/envs/env_0/IGRIS_C/Link_Neck_Pitch/LeftRgbCamera",
+   "lens_model": "pinhole"
+  },
+  {
+   "role": "head_right",
+   "name": "RightRgbCamera",
+   "link": "Link_Neck_Pitch",
+   "W": 640,
+   "H": 480,
+   "intr": [
+    433.3,
+    433.3,
+    320.0,
+    240.0
+   ],
+   "dist": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "clip": [
+    0.05,
+    100.0
+   ],
+   "official_pos": [
+    0.095516,
+    -0.026076,
+    0.121
+   ],
+   "pos": [
+    0.095516,
+    -0.026076,
+    0.121
+   ],
+   "axial_offset_m": 0.0,
+   "rot_conv": [
+    0.435338,
+    -0.435338,
+    0.557208,
+    -0.557208
+   ],
+   "convention": "ros",
+   "q_usd": [
+    -0.435338,
+    -0.435338,
+    0.557208,
+    0.557208
+   ],
+   "optical_axis_link": [
+    0.9703,
+    -0.2419,
+    0.0
+   ],
+   "output": "official",
+   "hfov_deg": 72.9,
+   "vfov_deg": 58.0,
+   "prim_path": "/World/envs/env_0/IGRIS_C/Link_Neck_Pitch/RightRgbCamera",
+   "lens_model": "pinhole"
+  },
+  {
+   "role": "hand_left",
+   "link": "Left_Hand",
+   "clip": [
+    0.02,
+    4.0
+   ],
+   "official_pos": [
+    -0.02442,
+    0.010317,
+    0.034793
+   ],
+   "pos": [
+    -0.019605,
+    0.01716,
+    0.040269
+   ],
+   "axial_offset_m": 0.01,
+   "rot_conv": [
+    0.281491,
+    -0.813343,
+    -0.479715,
+    -0.170613
+   ],
+   "convention": "world",
+   "q_usd": [
+    -0.222253,
+    0.111375,
+    0.872581,
+    -0.420477
+   ],
+   "optical_axis_link": [
+    0.4815,
+    0.6843,
+    0.5476
+   ],
+   "dist": [
+    0.047115,
+    -0.056155,
+    0.0,
+    0.0,
+    0.012162
+   ],
+   "name": "l_hand_camera_link",
+   "W": 320,
+   "H": 200,
+   "intr": [
+    115.669608,
+    115.546655,
+    159.669481,
+    96.948254
+   ],
+   "output": "official",
+   "hfov_deg": 108.3,
+   "vfov_deg": 81.7,
+   "prim_path": "/World/envs/env_0/IGRIS_C/Left_Hand/l_hand_camera_link",
+   "lens_model": "opencvPinhole"
+  },
+  {
+   "role": "hand_left",
+   "link": "Left_Hand",
+   "clip": [
+    0.02,
+    4.0
+   ],
+   "official_pos": [
+    -0.02442,
+    0.010317,
+    0.034793
+   ],
+   "pos": [
+    -0.019605,
+    0.01716,
+    0.040269
+   ],
+   "axial_offset_m": 0.01,
+   "rot_conv": [
+    0.281491,
+    -0.813343,
+    -0.479715,
+    -0.170613
+   ],
+   "convention": "world",
+   "q_usd": [
+    -0.222253,
+    0.111375,
+    0.872581,
+    -0.420477
+   ],
+   "optical_axis_link": [
+    0.4815,
+    0.6843,
+    0.5476
+   ],
+   "dist": [
+    0.047115,
+    -0.056155,
+    0.0,
+    0.0,
+    0.012162
+   ],
+   "name": "l_hand_camera_link_train",
+   "W": 640,
+   "H": 480,
+   "intr": [
+    231.3392,
+    231.0933,
+    319.339,
+    233.8965
+   ],
+   "output": "train_extend",
+   "pad_to": [
+    640,
+    480
+   ],
+   "dataset_key": "cam_left",
+   "hfov_deg": 108.3,
+   "vfov_deg": 92.2,
+   "prim_path": "/World/envs/env_0/IGRIS_C/Left_Hand/l_hand_camera_link_train",
+   "lens_model": "opencvPinhole"
+  },
+  {
+   "role": "hand_right",
+   "link": "Right_Hand",
+   "clip": [
+    0.02,
+    4.0
+   ],
+   "official_pos": [
+    -0.02442,
+    -0.010317,
+    0.034793
+   ],
+   "pos": [
+    -0.019605,
+    -0.017177,
+    0.040247
+   ],
+   "axial_offset_m": 0.01,
+   "rot_conv": [
+    0.280192,
+    0.81379,
+    -0.479987,
+    0.169854
+   ],
+   "convention": "world",
+   "q_usd": [
+    -0.421866,
+    0.871912,
+    0.111732,
+    -0.22207
+   ],
+   "optical_axis_link": [
+    0.4815,
+    -0.686,
+    0.5454
+   ],
+   "dist": [
+    0.044201,
+    -0.057607,
+    -0.000818,
+    0.000326,
+    0.012698
+   ],
+   "name": "r_hand_camera_link",
+   "W": 320,
+   "H": 200,
+   "intr": [
+    115.459869,
+    115.422582,
+    157.159381,
+    91.929442
+   ],
+   "output": "official",
+   "hfov_deg": 108.4,
+   "vfov_deg": 81.8,
+   "prim_path": "/World/envs/env_0/IGRIS_C/Right_Hand/r_hand_camera_link",
+   "lens_model": "opencvPinhole"
+  },
+  {
+   "role": "hand_right",
+   "link": "Right_Hand",
+   "clip": [
+    0.02,
+    4.0
+   ],
+   "official_pos": [
+    -0.02442,
+    -0.010317,
+    0.034793
+   ],
+   "pos": [
+    -0.019605,
+    -0.017177,
+    0.040247
+   ],
+   "axial_offset_m": 0.01,
+   "rot_conv": [
+    0.280192,
+    0.81379,
+    -0.479987,
+    0.169854
+   ],
+   "convention": "world",
+   "q_usd": [
+    -0.421866,
+    0.871912,
+    0.111732,
+    -0.22207
+   ],
+   "optical_axis_link": [
+    0.4815,
+    -0.686,
+    0.5454
+   ],
+   "dist": [
+    0.044201,
+    -0.057607,
+    -0.000818,
+    0.000326,
+    0.012698
+   ],
+   "name": "r_hand_camera_link_train",
+   "W": 640,
+   "H": 480,
+   "intr": [
+    230.9197,
+    230.8452,
+    314.3188,
+    223.8589
+   ],
+   "output": "train_extend",
+   "pad_to": [
+    640,
+    480
+   ],
+   "dataset_key": "cam_right",
+   "hfov_deg": 108.4,
+   "vfov_deg": 92.2,
+   "prim_path": "/World/envs/env_0/IGRIS_C/Right_Hand/r_hand_camera_link_train",
+   "lens_model": "opencvPinhole"
+  }
+ ],
+ "verdict": {
+  "LeftRgbCamera": {
+   "rendered": true,
+   "not_black": true,
+   "updates_between_poses": true,
+   "mean_abs_diff_static_vs_moving": 18.18,
+   "self_occlusion_frac_static": 0.0,
+   "self_occlusion_frac_moving": 0.0,
+   "depth_min_m_static": 2.8762,
+   "PASS": true
+  },
+  "RightRgbCamera": {
+   "rendered": true,
+   "not_black": true,
+   "updates_between_poses": true,
+   "mean_abs_diff_static_vs_moving": 18.35,
+   "self_occlusion_frac_static": 0.0,
+   "self_occlusion_frac_moving": 0.0,
+   "depth_min_m_static": 2.8792,
+   "PASS": true
+  },
+  "l_hand_camera_link": {
+   "rendered": true,
+   "not_black": true,
+   "updates_between_poses": true,
+   "mean_abs_diff_static_vs_moving": 58.65,
+   "self_occlusion_frac_static": 0.074,
+   "self_occlusion_frac_moving": 0.071,
+   "depth_min_m_static": 0.0115,
+   "PASS": true
+  },
+  "l_hand_camera_link_train": {
+   "rendered": true,
+   "not_black": true,
+   "updates_between_poses": true,
+   "mean_abs_diff_static_vs_moving": 55.74,
+   "self_occlusion_frac_static": 0.064,
+   "self_occlusion_frac_moving": 0.062,
+   "depth_min_m_static": 0.0115,
+   "PASS": true
+  },
+  "r_hand_camera_link": {
+   "rendered": true,
+   "not_black": true,
+   "updates_between_poses": true,
+   "mean_abs_diff_static_vs_moving": 87.39,
+   "self_occlusion_frac_static": 0.084,
+   "self_occlusion_frac_moving": 0.122,
+   "depth_min_m_static": 0.0113,
+   "PASS": true
+  },
+  "r_hand_camera_link_train": {
+   "rendered": true,
+   "not_black": true,
+   "updates_between_poses": true,
+   "mean_abs_diff_static_vs_moving": 85.9,
+   "self_occlusion_frac_static": 0.073,
+   "self_occlusion_frac_moving": 0.107,
+   "depth_min_m_static": 0.0112,
+   "PASS": true
+  }
+ },
+ "captures": {
+  "static": {
+   "t_sim": 0.0,
+   "stats": {
+    "LeftRgbCamera": {
+     "shape": [
+      480,
+      640,
+      3
+     ],
+     "mean": 180.1,
+     "std": 64.2,
+     "dark_frac": 0.0,
+     "depth_min_m": 2.8762,
+     "self_occlusion_frac": 0.0,
+     "depth_median_m": 4.753
+    },
+    "RightRgbCamera": {
+     "shape": [
+      480,
+      640,
+      3
+     ],
+     "mean": 180.1,
+     "std": 64.2,
+     "dark_frac": 0.0,
+     "depth_min_m": 2.8792,
+     "self_occlusion_frac": 0.0,
+     "depth_median_m": 4.751
+    },
+    "l_hand_camera_link": {
+     "shape": [
+      200,
+      320,
+      3
+     ],
+     "mean": 99.8,
+     "std": 54.1,
+     "dark_frac": 0.069,
+     "depth_min_m": 0.0115,
+     "self_occlusion_frac": 0.074,
+     "depth_median_m": 0.111
+    },
+    "l_hand_camera_link_train": {
+     "shape": [
+      480,
+      640,
+      3
+     ],
+     "mean": 96.6,
+     "std": 56.2,
+     "dark_frac": 0.091,
+     "depth_min_m": 0.0115,
+     "self_occlusion_frac": 0.064,
+     "depth_median_m": 0.106
+    },
+    "r_hand_camera_link": {
+     "shape": [
+      200,
+      320,
+      3
+     ],
+     "mean": 96.5,
+     "std": 51.7,
+     "dark_frac": 0.077,
+     "depth_min_m": 0.0113,
+     "self_occlusion_frac": 0.084,
+     "depth_median_m": 0.115
+    },
+    "r_hand_camera_link_train": {
+     "shape": [
+      480,
+      640,
+      3
+     ],
+     "mean": 94.0,
+     "std": 54.2,
+     "dark_frac": 0.097,
+     "depth_min_m": 0.0112,
+     "self_occlusion_frac": 0.073,
+     "depth_median_m": 0.108
+    }
+   },
+   "landmark_pixels": {
+    "LeftRgbCamera": {
+     "mug": {
+      "u": 364.0,
+      "v": 1871.7,
+      "depth_m": 0.168,
+      "in_image": false
+     },
+     "table": {
+      "u": 692.6,
+      "v": 2713.7,
+      "depth_m": 0.296,
+      "in_image": false
+     },
+     "l_index_tip": {
+      "u": -2492.7,
+      "v": 11017.7,
+      "depth_m": 0.034,
+      "in_image": false
+     },
+     "l_thumb_tip": {
+      "u": -848.9,
+      "v": 5153.9,
+      "depth_m": 0.067,
+      "in_image": false
+     },
+     "left_hand": {
+      "behind": true
+     },
+     "r_index_tip": {
+      "behind": true
+     },
+     "r_thumb_tip": {
+      "behind": true
+     },
+     "right_hand": {
+      "behind": true
+     }
+    },
+    "RightRgbCamera": {
+     "mug": {
+      "u": -24.9,
+      "v": 2147.2,
+      "depth_m": 0.144,
+      "in_image": false
+     },
+     "table": {
+      "u": 361.4,
+      "v": 2228.5,
+      "depth_m": 0.368,
+      "in_image": false
+     },
+     "l_index_tip": {
+      "behind": true
+     },
+     "l_thumb_tip": {
+      "behind": true
+     },
+     "left_hand": {
+      "behind": true
+     },
+     "r_index_tip": {
+      "u": 3180.3,
+      "v": 11169.2,
+      "depth_m": 0.034,
+      "in_image": false
+     },
+     "r_thumb_tip": {
+      "u": 1498.9,
+      "v": 5187.1,
+      "depth_m": 0.067,
+      "in_image": false
+     },
+     "right_hand": {
+      "behind": true
+     }
+    },
+    "l_hand_camera_link": {
+     "mug": {
+      "u": 21.7,
+      "v": -17.7,
+      "depth_m": 0.18,
+      "in_image": false
+     },
+     "table": {
+      "u": 182.3,
+      "v": 149.6,
+      "depth_m": 0.979,
+      "in_image": true
+     },
+     "l_index_tip": {
+      "u": 123.0,
+      "v": 252.2,
+      "depth_m": 0.067,
+      "in_image": false
+     },
+     "l_thumb_tip": {
+      "u": 0.5,
+      "v": 120.1,
+      "depth_m": 0.063,
+      "in_image": true
+     },
+     "left_hand": {
+      "behind": true
+     },
+     "r_index_tip": {
+      "u": 200.8,
+      "v": 18.7,
+      "depth_m": 0.385,
+      "in_image": true
+     },
+     "r_thumb_tip": {
+      "u": 177.3,
+      "v": -2.6,
+      "depth_m": 0.342,
+      "in_image": false
+     },
+     "right_hand": {
+      "u": 207.2,
+      "v": -50.4,
+      "depth_m": 0.275,
+      "in_image": false
+     }
+    },
+    "r_hand_camera_link": {
+     "mug": {
+      "u": 243.8,
+      "v": -25.9,
+      "depth_m": 0.244,
+      "in_image": false
+     },
+     "table": {
+      "u": 143.2,
+      "v": 187.9,
+      "depth_m": 0.789,
+      "in_image": true
+     },
+     "l_index_tip": {
+      "u": 116.5,
+      "v": 13.9,
+      "depth_m": 0.386,
+      "in_image": true
+     },
+     "l_thumb_tip": {
+      "u": 139.9,
+      "v": -7.4,
+      "depth_m": 0.342,
+      "in_image": false
+     },
+     "left_hand": {
+      "u": 110.1,
+      "v": -55.0,
+      "depth_m": 0.275,
+      "in_image": false
+     },
+     "r_index_tip": {
+      "u": 194.2,
+      "v": 247.9,
+      "depth_m": 0.067,
+      "in_image": false
+     },
+     "r_thumb_tip": {
+      "u": 316.1,
+      "v": 115.2,
+      "depth_m": 0.063,
+      "in_image": true
+     },
+     "right_hand": {
+      "behind": true
+     }
+    }
+   },
+   "files": {
+    "LeftRgbCamera": "cams_static_head_left.png",
+    "RightRgbCamera": "cams_static_head_right.png",
+    "l_hand_camera_link": "cams_static_hand_left.png",
+    "l_hand_camera_link_depth": "cams_static_hand_left_depth.png",
+    "l_hand_camera_link_train": "cams_static_hand_left_train_extend.png",
+    "r_hand_camera_link": "cams_static_hand_right.png",
+    "r_hand_camera_link_depth": "cams_static_hand_right_depth.png",
+    "r_hand_camera_link_train": "cams_static_hand_right_train_extend.png",
+    "cam_head": "cams_static_cam_head_1280x480.png",
+    "quad_preview": "cams_static_quad_preview.png"
+   }
+  },
+  "moving": {
+   "t_sim": 0.84,
+   "stats": {
+    "LeftRgbCamera": {
+     "shape": [
+      480,
+      640,
+      3
+     ],
+     "mean": 196.4,
+     "std": 53.4,
+     "dark_frac": 0.0,
+     "depth_min_m": 3.382,
+     "self_occlusion_frac": 0.0,
+     "depth_median_m": 4.87
+    },
+    "RightRgbCamera": {
+     "shape": [
+      480,
+      640,
+      3
+     ],
+     "mean": 196.7,
+     "std": 53.3,
+     "dark_frac": 0.0,
+     "depth_min_m": 3.3951,
+     "self_occlusion_frac": 0.0,
+     "depth_median_m": 4.867
+    },
+    "l_hand_camera_link": {
+     "shape": [
+      200,
+      320,
+      3
+     ],
+     "mean": 76.4,
+     "std": 44.5,
+     "dark_frac": 0.078,
+     "depth_min_m": 0.0115,
+     "self_occlusion_frac": 0.071,
+     "depth_median_m": 0.729
+    },
+    "l_hand_camera_link_train": {
+     "shape": [
+      480,
+      640,
+      3
+     ],
+     "mean": 76.1,
+     "std": 46.1,
+     "dark_frac": 0.092,
+     "depth_min_m": 0.0114,
+     "self_occlusion_frac": 0.062,
+     "depth_median_m": 0.721
+    },
+    "r_hand_camera_link": {
+     "shape": [
+      200,
+      320,
+      3
+     ],
+     "mean": 136.9,
+     "std": 86.5,
+     "dark_frac": 0.067,
+     "depth_min_m": 0.0113,
+     "self_occlusion_frac": 0.122,
+     "depth_median_m": 0.855
+    },
+    "r_hand_camera_link_train": {
+     "shape": [
+      480,
+      640,
+      3
+     ],
+     "mean": 135.0,
+     "std": 88.5,
+     "dark_frac": 0.084,
+     "depth_min_m": 0.0112,
+     "self_occlusion_frac": 0.107,
+     "depth_median_m": 0.799
+    }
+   },
+   "landmark_pixels": {
+    "LeftRgbCamera": {
+     "mug": {
+      "u": 362.6,
+      "v": 1953.7,
+      "depth_m": 0.163,
+      "in_image": false
+     },
+     "table": {
+      "u": 763.2,
+      "v": 3413.4,
+      "depth_m": 0.234,
+      "in_image": false
+     },
+     "l_index_tip": {
+      "behind": true
+     },
+     "l_thumb_tip": {
+      "behind": true
+     },
+     "left_hand": {
+      "behind": true
+     },
+     "r_index_tip": {
+      "behind": true
+     },
+     "r_thumb_tip": {
+      "behind": true
+     },
+     "right_hand": {
+      "behind": true
+     }
+    },
+    "RightRgbCamera": {
+     "mug": {
+      "u": -32.8,
+      "v": 2252.3,
+      "depth_m": 0.139,
+      "in_image": false
+     },
+     "table": {
+      "u": 391.9,
+      "v": 2663.9,
+      "depth_m": 0.306,
+      "in_image": false
+     },
+     "l_index_tip": {
+      "behind": true
+     },
+     "l_thumb_tip": {
+      "behind": true
+     },
+     "left_hand": {
+      "behind": true
+     },
+     "r_index_tip": {
+      "behind": true
+     },
+     "r_thumb_tip": {
+      "behind": true
+     },
+     "right_hand": {
+      "behind": true
+     }
+    },
+    "l_hand_camera_link": {
+     "mug": {
+      "behind": true
+     },
+     "table": {
+      "u": 112.7,
+      "v": 12.5,
+      "depth_m": 0.998,
+      "in_image": true
+     },
+     "l_index_tip": {
+      "u": 123.0,
+      "v": 252.2,
+      "depth_m": 0.067,
+      "in_image": false
+     },
+     "l_thumb_tip": {
+      "u": 0.5,
+      "v": 120.1,
+      "depth_m": 0.063,
+      "in_image": true
+     },
+     "left_hand": {
+      "behind": true
+     },
+     "r_index_tip": {
+      "u": 401.1,
+      "v": -96.9,
+      "depth_m": 0.156,
+      "in_image": false
+     },
+     "r_thumb_tip": {
+      "u": 372.5,
+      "v": -173.6,
+      "depth_m": 0.129,
+      "in_image": false
+     },
+     "right_hand": {
+      "u": 814.1,
+      "v": -703.4,
+      "depth_m": 0.051,
+      "in_image": false
+     }
+    },
+    "r_hand_camera_link": {
+     "mug": {
+      "u": 1311.3,
+      "v": -1137.5,
+      "depth_m": 0.042,
+      "in_image": false
+     },
+     "table": {
+      "u": 834.1,
+      "v": 257.0,
+      "depth_m": 0.206,
+      "in_image": false
+     },
+     "l_index_tip": {
+      "u": 163.9,
+      "v": 51.4,
+      "depth_m": 0.494,
+      "in_image": true
+     },
+     "l_thumb_tip": {
+      "u": 184.9,
+      "v": 36.0,
+      "depth_m": 0.455,
+      "in_image": true
+     },
+     "left_hand": {
+      "u": 170.8,
+      "v": 12.9,
+      "depth_m": 0.38,
+      "in_image": true
+     },
+     "r_index_tip": {
+      "u": 194.2,
+      "v": 247.9,
+      "depth_m": 0.067,
+      "in_image": false
+     },
+     "r_thumb_tip": {
+      "u": 316.1,
+      "v": 115.2,
+      "depth_m": 0.063,
+      "in_image": true
+     },
+     "right_hand": {
+      "behind": true
+     }
+    }
+   },
+   "files": {
+    "LeftRgbCamera": "cams_moving_head_left.png",
+    "RightRgbCamera": "cams_moving_head_right.png",
+    "l_hand_camera_link": "cams_moving_hand_left.png",
+    "l_hand_camera_link_depth": "cams_moving_hand_left_depth.png",
+    "l_hand_camera_link_train": "cams_moving_hand_left_train_extend.png",
+    "r_hand_camera_link": "cams_moving_hand_right.png",
+    "r_hand_camera_link_depth": "cams_moving_hand_right_depth.png",
+    "r_hand_camera_link_train": "cams_moving_hand_right_train_extend.png",
+    "cam_head": "cams_moving_cam_head_1280x480.png",
+    "quad_preview": "cams_moving_quad_preview.png"
+   }
+  },
+  "end": {
+   "t_sim": 12.0,
+   "stats": {
+    "LeftRgbCamera": {
+     "shape": [
+      480,
+      640,
+      3
+     ],
+     "mean": 161.6,
+     "std": 69.3,
+     "dark_frac": 0.0,
+     "depth_min_m": 2.3523,
+     "self_occlusion_frac": 0.0,
+     "depth_median_m": 4.576
+    },
+    "RightRgbCamera": {
+     "shape": [
+      480,
+      640,
+      3
+     ],
+     "mean": 161.1,
+     "std": 69.4,
+     "dark_frac": 0.0,
+     "depth_min_m": 2.3829,
+     "self_occlusion_frac": 0.0,
+     "depth_median_m": 4.585
+    },
+    "l_hand_camera_link": {
+     "shape": [
+      200,
+      320,
+      3
+     ],
+     "mean": 105.4,
+     "std": 58.0,
+     "dark_frac": 0.073,
+     "depth_min_m": 0.0115,
+     "self_occlusion_frac": 0.075,
+     "depth_median_m": 0.102
+    },
+    "l_hand_camera_link_train": {
+     "shape": [
+      480,
+      640,
+      3
+     ],
+     "mean": 106.9,
+     "std": 62.1,
+     "dark_frac": 0.087,
+     "depth_min_m": 0.0115,
+     "self_occlusion_frac": 0.067,
+     "depth_median_m": 0.1
+    },
+    "r_hand_camera_link": {
+     "shape": [
+      200,
+      320,
+      3
+     ],
+     "mean": 88.5,
+     "std": 56.0,
+     "dark_frac": 0.076,
+     "depth_min_m": 0.0113,
+     "self_occlusion_frac": 0.086,
+     "depth_median_m": 0.127
+    },
+    "r_hand_camera_link_train": {
+     "shape": [
+      480,
+      640,
+      3
+     ],
+     "mean": 85.0,
+     "std": 57.0,
+     "dark_frac": 0.093,
+     "depth_min_m": 0.0112,
+     "self_occlusion_frac": 0.074,
+     "depth_median_m": 0.116
+    }
+   },
+   "landmark_pixels": {
+    "LeftRgbCamera": {
+     "mug": {
+      "u": 380.2,
+      "v": 1690.3,
+      "depth_m": 0.179,
+      "in_image": false
+     },
+     "table": {
+      "u": 614.8,
+      "v": 1749.5,
+      "depth_m": 0.463,
+      "in_image": false
+     },
+     "l_index_tip": {
+      "u": -346.1,
+      "v": 3303.5,
+      "depth_m": 0.116,
+      "in_image": false
+     },
+     "l_thumb_tip": {
+      "u": -238.5,
+      "v": 2909.2,
+      "depth_m": 0.118,
+      "in_image": false
+     },
+     "left_hand": {
+      "u": -2061.5,
+      "v": 7760.7,
+      "depth_m": 0.041,
+      "in_image": false
+     },
+     "r_index_tip": {
+      "behind": true
+     },
+     "r_thumb_tip": {
+      "u": 15973.4,
+      "v": 43441.6,
+      "depth_m": 0.007,
+      "in_image": false
+     },
+     "right_hand": {
+      "behind": true
+     }
+    },
+    "RightRgbCamera": {
+     "mug": {
+      "u": 8.9,
+      "v": 1892.7,
+      "depth_m": 0.157,
+      "in_image": false
+     },
+     "table": {
+      "u": 328.1,
+      "v": 1524.6,
+      "depth_m": 0.544,
+      "in_image": false
+     },
+     "l_index_tip": {
+      "u": -18406.9,
+      "v": 58734.2,
+      "depth_m": 0.006,
+      "in_image": false
+     },
+     "l_thumb_tip": {
+      "u": -4852.5,
+      "v": 15880.3,
+      "depth_m": 0.02,
+      "in_image": false
+     },
+     "left_hand": {
+      "behind": true
+     },
+     "r_index_tip": {
+      "u": 1238.9,
+      "v": 3604.5,
+      "depth_m": 0.105,
+      "in_image": false
+     },
+     "r_thumb_tip": {
+      "u": 978.7,
+      "v": 2920.6,
+      "depth_m": 0.118,
+      "in_image": false
+     },
+     "right_hand": {
+      "u": 6479.5,
+      "v": 22731.4,
+      "depth_m": 0.014,
+      "in_image": false
+     }
+    },
+    "l_hand_camera_link": {
+     "mug": {
+      "u": 35.6,
+      "v": 39.6,
+      "depth_m": 0.204,
+      "in_image": true
+     },
+     "table": {
+      "u": 188.2,
+      "v": 192.2,
+      "depth_m": 0.832,
+      "in_image": true
+     },
+     "l_index_tip": {
+      "u": 123.0,
+      "v": 252.2,
+      "depth_m": 0.067,
+      "in_image": false
+     },
+     "l_thumb_tip": {
+      "u": 8.5,
+      "v": 124.2,
+      "depth_m": 0.064,
+      "in_image": true
+     },
+     "left_hand": {
+      "behind": true
+     },
+     "r_index_tip": {
+      "u": 175.9,
+      "v": 56.5,
+      "depth_m": 0.48,
+      "in_image": true
+     },
+     "r_thumb_tip": {
+      "u": 156.5,
+      "v": 43.6,
+      "depth_m": 0.43,
+      "in_image": true
+     },
+     "right_hand": {
+      "u": 175.9,
+      "v": 15.7,
+      "depth_m": 0.371,
+      "in_image": true
+     }
+    },
+    "r_hand_camera_link": {
+     "mug": {
+      "u": 233.0,
+      "v": -55.7,
+      "depth_m": 0.21,
+      "in_image": false
+     },
+     "table": {
+      "u": 110.8,
+      "v": 161.9,
+      "depth_m": 0.827,
+      "in_image": true
+     },
+     "l_index_tip": {
+      "u": 94.6,
+      "v": -35.6,
+      "depth_m": 0.287,
+      "in_image": false
+     },
+     "l_thumb_tip": {
+      "u": 123.0,
+      "v": -71.2,
+      "depth_m": 0.244,
+      "in_image": false
+     },
+     "left_hand": {
+      "u": 75.5,
+      "v": -170.1,
+      "depth_m": 0.181,
+      "in_image": false
+     },
+     "r_index_tip": {
+      "u": 194.2,
+      "v": 247.9,
+      "depth_m": 0.067,
+      "in_image": false
+     },
+     "r_thumb_tip": {
+      "u": 305.7,
+      "v": 116.4,
+      "depth_m": 0.065,
+      "in_image": true
+     },
+     "right_hand": {
+      "behind": true
+     }
+    }
+   },
+   "files": {
+    "LeftRgbCamera": "cams_end_head_left.png",
+    "RightRgbCamera": "cams_end_head_right.png",
+    "l_hand_camera_link": "cams_end_hand_left.png",
+    "l_hand_camera_link_depth": "cams_end_hand_left_depth.png",
+    "l_hand_camera_link_train": "cams_end_hand_left_train_extend.png",
+    "r_hand_camera_link": "cams_end_hand_right.png",
+    "r_hand_camera_link_depth": "cams_end_hand_right_depth.png",
+    "r_hand_camera_link_train": "cams_end_hand_right_train_extend.png",
+    "cam_head": "cams_end_cam_head_1280x480.png",
+    "quad_preview": "cams_end_quad_preview.png"
+   }
+  }
+ },
+ "layers": {
+  "fix": "/mnt/isaac/scenes/igris_fix_pelvis.usda",
+  "appearance": "/mnt/isaac/scenes/igris_appearance.usda",
+  "cameras": "/mnt/isaac/scenes/igris_cameras.usda"
+ },
+ "vram_mib": {
+  "peak_during_run": 3842,
+  "total": 8188
+ },
+ "realtime_factor": 0.21,
+ "pelvis_fix_hold_check": {
+  "secs": 12.0,
+  "max_pos_err_m": 0.0,
+  "max_ang_err_deg": 0.5019,
+  "samples": 61,
+  "tolerance": {
+   "pos_m": 0.005,
+   "ang_deg": 1.0
+  },
+  "held": true
+ },
+ "arm_test": {
+  "joints": [
+   "Joint_Shoulder_Pitch_Left",
+   "Joint_Shoulder_Pitch_Right",
+   "Joint_Elbow_Pitch_Left",
+   "Joint_Elbow_Pitch_Right",
+   "Joint_Wrist_Yaw_Left",
+   "Joint_Wrist_Yaw_Right",
+   "Joint_Wrist_Roll_Left",
+   "Joint_Wrist_Roll_Right",
+   "Joint_Wrist_Pitch_Left",
+   "Joint_Wrist_Pitch_Right"
+  ],
+  "commanded_amplitude_rad": 0.4,
+  "freq_hz": 0.3,
+  "observed_range_rad": [
+   0.437,
+   0.388,
+   0.464,
+   0.431,
+   0.853,
+   0.825,
+   0.804,
+   0.805,
+   0.726,
+   0.729
+  ],
+  "moved": true
+ },
+ "probe": {
+  "LeftRgbCamera": {
+   "center_inside_mesh": true,
+   "first_hit_fwd_m": 0.018,
+   "fov_grid_min_hit_m": 0.0176,
+   "fov_grid_max_hit_m": 0.0259
+  },
+  "RightRgbCamera": {
+   "center_inside_mesh": true,
+   "first_hit_fwd_m": 0.018,
+   "fov_grid_min_hit_m": 0.0176,
+   "fov_grid_max_hit_m": 0.0259
+  },
+  "l_hand_camera_link": {
+   "center_inside_mesh": true,
+   "first_hit_fwd_m": 0.008,
+   "fov_grid_min_hit_m": 0.0057,
+   "fov_grid_max_hit_m": 0.0866
+  },
+  "r_hand_camera_link": {
+   "center_inside_mesh": true,
+   "first_hit_fwd_m": 0.0081,
+   "fov_grid_min_hit_m": 0.0057,
+   "fov_grid_max_hit_m": 0.0896
+  }
+ },
+ "probe_hand_offsets": {
+  "0.010": {
+   "l_hand_camera_link": {
+    "<0cm": 0.0,
+    "<1cm": 0.016,
+    "<2cm": 0.067,
+    "<3cm": 0.124,
+    "<5cm": 0.133,
+    "<10cm": 0.133
+   },
+   "r_hand_camera_link": {
+    "<0cm": 0.0,
+    "<1cm": 0.022,
+    "<2cm": 0.067,
+    "<3cm": 0.137,
+    "<5cm": 0.149,
+    "<10cm": 0.149
+   }
+  },
+  "0.015": {
+   "l_hand_camera_link": {
+    "<0cm": 0.0,
+    "<1cm": 0.0,
+    "<2cm": 0.01,
+    "<3cm": 0.07,
+    "<5cm": 0.079,
+    "<10cm": 0.079
+   },
+   "r_hand_camera_link": {
+    "<0cm": 0.0,
+    "<1cm": 0.0,
+    "<2cm": 0.013,
+    "<3cm": 0.076,
+    "<5cm": 0.092,
+    "<10cm": 0.092
+   }
+  },
+  "0.020": {
+   "l_hand_camera_link": {
+    "<0cm": 0.0,
+    "<1cm": 0.0,
+    "<2cm": 0.0,
+    "<3cm": 0.013,
+    "<5cm": 0.032,
+    "<10cm": 0.032
+   },
+   "r_hand_camera_link": {
+    "<0cm": 0.0,
+    "<1cm": 0.0,
+    "<2cm": 0.0,
+    "<3cm": 0.019,
+    "<5cm": 0.032,
+    "<10cm": 0.032
+   }
+  }
+ }
+}

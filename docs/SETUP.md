@@ -75,7 +75,8 @@ ISAAC_ROOT=/mnt/isaac bash ~/igris_ws/scripts/20_install_isaac.sh          # ver
 # 기존 환경 자산(암호는 pinentry 창에만): download → list → extract → forget
 bash ~/igris_ws/scripts/30_fetch_vla_scene.sh download|list|extract|forget
 # ★ 기존 환경 + IGRIS-C 1대(GUI 유지)
-bash ~/igris_ws/scripts/run_igris_vla_scene.sh --secs 12 --hold 3600      # 기본: 골반 고정 on + 임시 외형 on + 팔 동작 시험
+bash ~/igris_ws/scripts/run_igris_vla_scene.sh --secs 12 --hold 3600      # 기본: 골반 고정 on + 임시 외형 on + RGB 카메라 4개 on + 팔·손목 동작 시험
+#   카메라 옵션: --no-cameras · --viewport-camera head_left|head_right|hand_left|hand_right|scene (hold 중 GUI 뷰포트) · 캡처: data/isaac/cameras/<tag>_{static,moving,end}_*.png
 #   옵션: --no-fix(고정 해제, 제어기 없어 넘어짐) · --fix-link root(상체 base_link를 고정 베이스로) · --no-appearance(공식 USD의 흰색 그대로) · --headless
 ```
 
@@ -127,3 +128,19 @@ bash ~/igris_ws/scripts/run_igris_vla_scene.sh --secs 12 --hold 3600      # 기�
 - 골반 고정은 **지지 상태**(균형 제어 아님). 검증: 12초, 위치 0.00mm·방향 ≤0.50°(허용치 1.0°), 팔 4관절 사인파 추종 확인(`igris.arm_test`).
 - 외형은 **공식 스킨이 아닌 임시 근사 재질**(공식 사진 육안 참고, 출처는 YAML 머리말). 공식 외형·재질 파일 제공 여부 확인 전까지 수정·확정 보류.
 - 구현 메모: 레이어 mute/unmute·RigidPrim 뷰 추가는 PhysX 텐서 뷰를 무효화하므로, 전후 스크린샷 뒤 `world.reset()`으로 재초기화하고 고정 링크 포즈는 USD 변환에서 읽는다. 최종 배치·레이어 작성은 `world.stop()` 상태에서 한다(관절 프레임 불일치 경고 방지).
+
+## 10. RGB 카메라 4개 (config/igris_cameras.yaml → 레이어 igris_cameras.usda, scripts/isaac/igris_cameras.py)
+
+출발점: ROBROS 공식 `robot_cfg.py`/`camera_cfg.py`(igris_c_isaacsim_public b53e424). 실행 중인 USD 변형 = `extras/wrist_hand_independent/igris_c.usd`. **공식 USD에는 Camera prim이 없다**(from_urdf 변형 전부; 공식 Isaac Lab cfg가 실행 시 spawn). 이 프로젝트에서도 실행 시 별도 레이어에 생성하며 기존 `/World/SceneCamera`(관찰용)만 있었다. D435 RGB·깊이는 이번 4개에 포함하지 않음.
+
+| 역할 | prim(부모 링크 자식) | 해상도 | fx, fy, cx, cy | 왜곡(k1 k2 p1 p2 k3) | 위치(링크, m) | 회전 | near/far |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 머리 좌안 | `…/IGRIS_C/Link_Neck_Pitch/LeftRgbCamera` | 640×480 | 433.3, 433.3, 320, 240 | 없음 | (0.095516, 0.026076, 0.121) 공식 그대로 | ROS 규약 (0.5,−0.5,0.5,−0.5)에 링크 z축 +14° | 0.05 / 100 |
+| 머리 우안 | `…/Link_Neck_Pitch/RightRgbCamera` | 640×480 | 433.3, 433.3, 320, 240 | 없음 | (0.095516, −0.026076, 0.121) 공식 그대로 | 〃 −14° | 0.05 / 100 |
+| 왼손바닥 | `…/Left_Hand/l_hand_camera_link` | 320×200 | 115.6696, 115.5467, 159.6695, 96.9483 (LEFT_WRIST_INTRINSIC) | 0.047115, −0.056155, 0, 0, 0.012162 | 공식 (−0.024420, 0.010317, 0.034793) → **적용 (−0.019605, 0.017160, 0.040269)** (광축 +10 mm) | world 규약 (0.281491, −0.813343, −0.479715, −0.170613) 공식 그대로 | **0.02** / 4 (공식 0.001) |
+| 오른손바닥 | `…/Right_Hand/r_hand_camera_link` | 320×200 | 115.4599, 115.4226, 157.1594, 91.9294 (RIGHT_WRIST_INTRINSIC) | 0.044201, −0.057607, −0.000818, 0.000326, 0.012698 | 공식 (−0.024420, −0.010317, 0.034793) → **적용 (−0.019605, −0.017177, 0.040247)** | world 규약 (0.280192, 0.813790, −0.479987, 0.169854) 공식 그대로 | **0.02** / 4 |
+
+- 손 위치를 옮긴 근거: 공식 STL 시각 메시에는 눈·손바닥 구멍이 없고 공식 광학 중심 4개가 닫힌 셸 내부에 있다(`scripts/isaac/tools/camera_geometry_probe.py`, `data/isaac/camera_probe/`). 머리는 앞 셸까지 17.6–25.9 mm라 공식 near 0.05 m가 셸을 통과시키므로 무수정. 손은 5.7–8.1 mm(공식 near 0.001)라 셸 내부가 보여, 광축 방향 +10 mm(셸 표면 +2 mm)로 옮기고 near 0.02 m로 셸 가장자리(2 cm 이내)를 제거. 남는 자기 메시(2–3 cm, 손바닥 가장자리)는 화면 테두리 7–8%(`self_occlusion_frac`), +20 mm로 두면 1–2%로 줄지만 공식 extrinsic에서 더 멀어짐(YAML `axial_offset_m`).
+- 내부 파라미터 → USD: focalLength 24, horizontalAperture = 24·W/fx, verticalAperture = 24·H/fy; 손은 `Camera.set_opencv_pinhole_properties(cx, cy, fx, fy, [k1..k3])`(OmniLensDistortionOpenCvPinholeAPI, 공식 camera_cfg.py와 같은 스키마)로 주점·왜곡 적용. 회전은 공식 규약(ros/world)을 USD 카메라(−z 전방, +y 상)로 변환(`igris_cameras.conv_to_usd`).
+- 출력: 공식 4개 + `cam_head` 1280×480(좌|우 hstack; `lerobot_robot_igris` view=left가 `frame[:, :640]`이므로 좌안이 왼쪽) + 손 학습용 `train_extend` 640×480(`l_hand_camera_link_train`, `r_…_train` prim; fx,fy,cx,cy ×2, cy+40; 수평 FOV 108.3° 동일, 수직 81.7°→92.2°, 상하 40 px는 보정 범위 밖 외삽). `letterbox`(640×400 렌더+상하 검은 띠)와 `none`은 YAML `train_output.mode`.
+- 검증 지표(결과 JSON `cameras.verdict`): rendered(std>2), not_black(어두운 화소<50%), updates_between_poses(정지↔동작 평균 절대차>1), self_occlusion_frac(<3 cm 화소)<15%. 랜드마크(손가락 끝·머그·작업대) 화소 투영 `landmark_pixels`로 방향 확인.

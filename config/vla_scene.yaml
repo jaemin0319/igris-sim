@@ -55,10 +55,11 @@ igris:
     enabled: true
     hold_tolerance: {pos_m: 0.005, ang_deg: 1.0}   # 사용자 결정(2026-09-19): 팔 동작 중 방향 오차 최대 0.5°는 허용
     link: auto                  # auto = 양쪽 Joint_Hip_Pitch의 부모(Link_Waist_Pitch, 실제 골반). root = articulation root(base_link = 상체)를 Lab 방식 고정
-  appearance_config: ~/igris_ws/config/igris_appearance.yaml   # 외형 override 레이어 igris_appearance.usda (CLI --no-appearance)
+  appearance_config: ~/igris_ws/config/igris_appearance.yaml
+  cameras_config: ~/igris_ws/config/igris_cameras.yaml          # RGB 카메라 4개 레이어 igris_cameras.usda (CLI --no-cameras, --viewport-camera)   # 외형 override 레이어 igris_appearance.usda (CLI --no-appearance)
   arm_test:                     # 고정 검증용: 팔 관절 사인파 목표(초기자세 기준). CLI --arm-test
     enabled: true
-    joints: ["Joint_Shoulder_Pitch_(Left|Right)", "Joint_Elbow_Pitch_(Left|Right)"]
+    joints: ["Joint_Shoulder_Pitch_(Left|Right)", "Joint_Elbow_Pitch_(Left|Right)", "Joint_Wrist_(Yaw|Roll|Pitch)_(Left|Right)"]   # 카메라 검증: 손목 포함
     amplitude_rad: 0.4
     freq_hz: 0.3
   yaw_offset_deg: 0.0

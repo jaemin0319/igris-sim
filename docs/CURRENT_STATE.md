@@ -1,6 +1,37 @@
-# CURRENT STATE — 2026-09-19 (5차 갱신: 골반 고정 + 임시 외형 레이어 확정)
+# CURRENT STATE — 2026-09-26 (6차 갱신: RGB 카메라 4개)
 
-판정: PASS / FAIL / BLOCKED / NOT TESTED. 로그: `~/igris_ws/logs/`, 결과: `~/igris_ws/data/isaac/`(Git 제외), 요약본: `docs/results/`.
+판정: PASS / FAIL / BLOCKED / NOT TESTED. 로그: `~/igris_ws/logs/`, 결과: `~/igris_ws/data/isaac/`(Git 제외), 요약본: `docs/results/`, 미리보기: `docs/img/`.
+
+## 6차 — 머리 좌/우 눈 + 좌/우 손바닥 RGB 카메라 (GUI 실행·실제 렌더 검증 완료)
+
+실행: `bash ~/igris_ws/scripts/run_igris_vla_scene.sh --secs 12 --hold 3600` (카메라 기본 on; `--no-cameras`, `--viewport-camera hand_left` 등)
+
+| 항목 | 판정 | 근거 |
+| --- | --- | --- |
+| 현황: 실행 USD = `extras/wrist_hand_independent/igris_c.usd`; 머리 `Link_Neck_Pitch`, 손 `Left_Hand`/`Right_Hand` 링크 확인. **공식 USD에 Camera prim 없음**, 프로젝트에는 관찰용 `/World/SceneCamera`뿐(중복 생성 없음). 이 저장소에 AGENTS.md는 없고 규칙 파일은 CLAUDE.md | PASS(조사) | logs/80, data/isaac/inspect_igris_usd.json |
+| 메시 기하: 공식 STL에 눈 구멍·손바닥 구멍 없음. 공식 광학 중심 4개 모두 닫힌 셸 내부(머리 앞 셸 17.6–25.9 mm, 손 5.7–8.1 mm) | PASS(조사) | docs/results/igris_cameras.json `probe`, data/isaac/camera_probe/*_depthmap.png |
+| 장착: 별도 레이어 `igris_cameras.usda`, 링크 자식 Camera prim 4개(+학습용 손 2개) → 링크를 따라 움직임(동작 프레임에서 손 카메라 영상 변화 평균 58–87/255) | PASS | docs/results/igris_cameras.json `verdict.updates_between_poses` |
+| 머리 광학: 640×480, fx=fy=433.3, cx=320, cy=240, ±14° 설치, 공식 위치 그대로, near 0.05 | PASS | 〃 `specs` |
+| 손 광학: 320×200, LEFT/RIGHT_WRIST_INTRINSIC·왜곡·회전 공식 그대로. **위치만 광축 +10 mm**(수정 전/후 값 SETUP §10), near 0.001→0.02 | PASS(수정 기록) | 〃 |
+| 렌더 검증(GUI, 정지·동작·종료 3회 캡처): 4개 모두 렌더됨·검지 않음·자세 간 갱신. 머리 자기 메시 0%, 손 7–8%(화면 테두리 손바닥 셸 2–3 cm; 빨강 표시 depth PNG) | PASS | data/isaac/cameras/cams_*.png, docs/img/igris_cameras_*.jpg |
+| 방향: 머리 영상 정립(바닥 아래·벽 위), 좌안이 좌측을 더 봄(±14°). 손: 정지 자세(팔 내림)에서 자기 허벅지·엄지가 좌측 테두리, 검지는 하단 밖 → **손가락은 영상 하단 방향**(공식 회전 그대로). 동작 자세에서 바닥·작업대 다리·머그 방향이 시야에 들어옴 | PASS(관찰) | 〃 `landmark_pixels` |
+| **작업 대상 시야**: 로봇이 작업대 바로 앞(머그가 얼굴 전방 0.17 m·아래 0.58 m)이라 목 중립 자세의 머리 카메라 시야(수직 58°)에 작업대·머그가 **들어오지 않음**(약 70° 아래). 목 pitch를 숙여야 함(이번 범위 밖) | 관찰 | 〃 |
+| 데이터셋 연결: `cam_head` 1280×480 = 좌\|우 결합 출력 제공. 손은 공식 320×200 + 학습용 640×480 `train_extend`(같은 렌즈 모델 ×2, 세로 80 px 외삽; H-FOV 108.3° 동일, V-FOV 81.7→92.2°) | PASS(구현) | 〃 `specs[output=train_extend]` |
+| 성능: 4+2 카메라 렌더 시 RTF 0.21, VRAM 최대 3.8 GB | 관찰 | 〃 |
+
+### 데이터셋(igris_c_trainer sample_dataset)과 남는 차이
+- 실기 카메라의 내부 파라미터·왜곡이 데이터셋에 없음(cam_head 1280×480, cam_left/right 640×480, 20 fps만 확인). 시뮬 머리는 공식 fx 433.3(왜곡 없음), 손은 공식 320×200 보정값 기반 → 640×480 `train_extend`는 **실기 640×480 카메라와 동일하다고 볼 수 없음**(종횡비 1.6→1.333을 세로 외삽으로 맞춘 근사).
+- 시뮬 프레임률은 물리 50 Hz 스텝마다 렌더(캡처는 정지/동작/종료 3회). 20 fps 스트림·동영상 인코딩(mp4)은 미구현.
+- D435 RGB/깊이(공식 head_camera/head_depth_camera)는 미장착.
+
+### 미검증
+- 실기 카메라와의 화각·색·노출 비교, 왜곡 계수의 렌더 반영 정밀도(Isaac OpenCV pinhole 모델 적용 여부는 prim 속성으로만 확인).
+- `--viewport-camera` 로 GUI 뷰포트를 카메라로 전환하는 기능(코드만, 실행 확인 안 함).
+- 목 pitch 조정 후 작업대가 머리 시야에 들어오는지.
+
+---
+
+(이하 5차 갱신 기록)
 
 ## 5차 — 골반 고정·외형 레이어 (사용자 화면 확인 후 확정)
 

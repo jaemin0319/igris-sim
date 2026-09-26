@@ -31,7 +31,8 @@ bash scripts/30_fetch_vla_scene.sh download && bash scripts/30_fetch_vla_scene.s
 bash scripts/30_fetch_vla_scene.sh forget            # gpg-agent 메모리의 암호 캐시 제거
 bash scripts/02_assets_manifest.sh verify            # 추출 자산 포함 84개 SHA-256 대조
 # 7) 기존 환경 + IGRIS-C 1대 (GUI, 5초 물리 후 초기 배치로 되돌려 창 유지)
-bash scripts/run_igris_vla_scene.sh --secs 12 --hold 3600   # 기본: 골반 고정(지지 상태, 균형 제어 아님) + 임시 근사 외형. 끄기: --no-fix / --no-appearance
+bash scripts/run_igris_vla_scene.sh --secs 12 --hold 3600   # 기본: 골반 고정(지지 상태, 균형 제어 아님) + 임시 근사 외형 + RGB 카메라 4개(머리 좌/우 눈, 좌/우 손바닥). 끄기: --no-fix / --no-appearance / --no-cameras
+#    카메라 캡처: data/isaac/cameras/<tag>_{static,moving,end}_{head_left,head_right,hand_left,hand_right}.png, *_cam_head_1280x480.png, *_quad_preview.png
 #    설치 확인용 빈 장면: bash scripts/run_isaac_igris.sh --secs 5 --hold 60
 ```
 
@@ -43,6 +44,8 @@ bash scripts/run_igris_vla_scene.sh --secs 12 --hold 3600   # 기본: 골반 고
 
 임시 근사 외형(공식 스킨 아님) 전/후: `docs/img/igris_before_appearance_diag.jpg`, `docs/img/igris_after_appearance_diag.jpg`
 
+RGB 카메라 4개(좌상 머리 좌안 · 우상 머리 우안 · 좌하 왼손바닥 · 우하 오른손바닥), 정지/동작 자세: `docs/img/igris_cameras_static_quad.jpg`, `docs/img/igris_cameras_moving_quad.jpg` — 설정·근거는 docs/SETUP.md §10
+
 ## 구성
 
 | 경로 | 내용 | Git |
@@ -53,6 +56,7 @@ bash scripts/run_igris_vla_scene.sh --secs 12 --hold 3600   # 기본: 골반 고
 | `repos.lock`, `assets.sha256` | 외부 저장소 커밋, 자산 SHA-256 | 포함 |
 | `src/`, `envs/`, `opt/`, `downloads/`, `data/`, `logs/`, `ros2_ws/`, `build/` | 외부 소스·설치본·산출물 | **제외** |
 | `config/vla_scene.yaml` | 기존 장면 정의(배치·조명·재질·G1 자리·IGRIS 배치 규칙, 출처 sha256) | 포함 |
+| `config/igris_cameras.yaml`, `scripts/isaac/igris_cameras.py` | RGB 카메라 4개(공식 robot_cfg.py 기반, 손 위치 수정 기록, 학습용 640×480 출력) | 포함 |
 | `/mnt/isaac` | Isaac Sim 설치본(`env`)·Kit 캐시·`vla-scene/{parts,extracted}`·생성 장면 `scenes/*.usda` | 저장소 밖 |
 
 ## 자산 출처·라이선스

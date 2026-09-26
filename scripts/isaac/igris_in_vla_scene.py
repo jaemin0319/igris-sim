@@ -17,6 +17,8 @@ ap.add_argument("--fix", dest="fix", action="store_true", default=None, help="�
 ap.add_argument("--fix-link", default=None, help="고정할 링크: auto(=양쪽 Joint_Hip_Pitch의 부모, 골반) | root | 링크명")
 ap.add_argument("--appearance", dest="appearance", action="store_true", default=None); ap.add_argument("--no-appearance", dest="appearance", action="store_false")
 ap.add_argument("--arm-test", dest="arm_test", action="store_true", default=None, help="물리 중 팔 관절에 사인파 목표를 주어 움직임 확인")
+ap.add_argument("--cameras", dest="cameras", action="store_true", default=None); ap.add_argument("--no-cameras", dest="cameras", action="store_false")
+ap.add_argument("--viewport-camera", default="scene", help="GUI viewport: scene | head_left | head_right | hand_left | hand_right")
 a = ap.parse_args(); os.makedirs(a.out, exist_ok=True)
 import yaml
 cfg = yaml.safe_load(open(a.config))
@@ -171,6 +173,12 @@ with Usd.EditContext(stage, Usd.EditTarget(appL)):
         UsdShade.MaterialBindingAPI.Apply(target).Bind(mats[cls], bindingStrength=UsdShade.Tokens.strongerThanDescendants); app_stats[cls] = app_stats.get(cls, 0) + 1
 appL.Save(); res["appearance"] = {"enabled": bool(app_on), "config": ig.get("appearance_config", "~/igris_ws/config/igris_appearance.yaml"), "links_per_class": app_stats, "reference_photos": APP.get("unmodeled") and "see config"}
 if not app_on: stage.MuteLayer(appL.identifier)
+# ---- (레이어 3) RGB 카메라 4개: 링크 자식 Camera prim (config/igris_cameras.yaml)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import igris_cameras as IC
+CAMCFG = yaml.safe_load(open(os.path.expanduser(ig.get("cameras_config", "~/igris_ws/config/igris_cameras.yaml")))); cam_on = CAMCFG.get("enabled", True) if a.cameras is None else a.cameras
+cam_specs = []; cam_sensors = {}
+if cam_on:
+    camL = new_sublayer("igris_cameras.usda"); res["layers"]["cameras"] = camL.identifier; cam_specs = IC.author(stage, camL, ig["prim"], IC.build_specs(CAMCFG))
 res["placement"] = {"g1_slot_pos": g1["pos"], "g1_slot_rot_wxyz": g1["rot"], "igris_base_pos": [gx, gy, round(base_z, 4)], "igris_yaw_deg": round(math.degrees(yaw), 2),
                     "rule": "x,y,yaw from G1 slot (+xy_offset); z = floor_z(raycast) + standing_base_height + clearance (G1 z not copied)"}
 scene_usda = os.path.join(scene_dir, "igris_in_vla_scene.usda"); stage.GetRootLayer().Export(scene_usda); res["scene_layer"] = scene_usda
@@ -190,6 +198,8 @@ ctrl.set_gains(kps=kp, kds=kd); reset_pose(); art.apply_action(ArticulationActio
 res["load"] = {"igris_usd": IGRIS_USD, "articulation_root": roots[0], "num_dof": int(art.num_dof), "pd_gain_joints": matched,
                "env_prims": {e["prim"]: sum(1 for _ in Usd.PrimRange(stage.GetPrimAtPath(e["prim"]), Usd.TraverseInstanceProxies())) for e in cfg["environment"]},
                "mesh_prims_total": sum(1 for p in Usd.PrimRange(stage.GetPseudoRoot(), Usd.TraverseInstanceProxies()) if p.IsA(UsdGeom.Mesh))}
+if cam_on:
+    cam_sensors = IC.make_sensors(stage, camL, cam_specs); res["cameras"] = {"config": ig.get("cameras_config", "~/igris_ws/config/igris_cameras.yaml"), "specs": cam_specs, "captures": {}}
 # ---- 초기 겹침·발 높이(물리 시작 전 자세 기준 AABB)
 timeline = omni.timeline.get_timeline_interface() if hasattr(omni, "timeline") else None
 world.step(render=True); reset_pose(); world.pause()
@@ -216,6 +226,7 @@ shots = []
 try:
     from omni.kit.viewport.utility import get_active_viewport, capture_viewport_to_file
     vp = get_active_viewport(); vp.camera_path = cam["prim"]
+    VP_CHOICE = {sp["role"]: sp["prim_path"] for sp in cam_specs if sp["output"] == "official"}
     def shot(name, eye, target):
         set_camera_view(eye=eye, target=target, camera_prim_path=cam["prim"])
         for _ in range(30): app.update()
@@ -243,7 +254,18 @@ if not a.freeze:
         def get_world_pose(self):
             M = UsdGeom.Xformable(self.prim).ComputeLocalToWorldTransform(Usd.TimeCode.Default()).RemoveScaleShear(); q = M.ExtractRotationQuat(); return np.array(M.ExtractTranslation()), np.array([q.GetReal(), *q.GetImaginary()])
     fixed_rp = _UsdPose(fixed_prim) if fixed_prim is not None else None
+    cap_dir = os.path.join(a.out, "cameras"); moving_k = int(round(float(CAMCFG.get("capture", {}).get("moving_frame_time_s", 0.83))*50)); cap_frames = {}
+    def cam_capture(label):
+        if not cam_on: return
+        for _ in range(6): app.update()
+        fr = IC.capture(cam_sensors, cam_specs, float(CAMCFG.get("capture", {}).get("self_occlusion_depth_m", 0.03))); files = IC.save(fr, cam_specs, cap_dir, f"{a.tag}_{label}", CAMCFG)
+        landmarks = {"mug": cfg["environment"][1]["prim"], "table": cfg["environment"][0]["prim"]}
+        for side, pre in (("left", "l"), ("right", "r")): landmarks.update({f"{pre}_index_tip": f'{ig["prim"]}/{pre}_index_distal', f"{pre}_thumb_tip": f'{ig["prim"]}/{pre}_thumb_distal', f"{side}_hand": f'{ig["prim"]}/{side.capitalize()}_Hand'})
+        proj = {sp["name"]: IC.project_points(stage, sp, landmarks, ig["prim"]) for sp in cam_specs if sp["output"] == "official"}
+        res["cameras"]["captures"][label] = {"t_sim": round(float(k_now)/50.0, 2), "stats": {n: {k: v for k, v in st.items() if k != "_depth"} for n, (_, st) in fr.items()}, "files": files, "landmark_pixels": proj}; cap_frames[label] = {n: img for n, (img, _) in fr.items()}
+    k_now = 0; cam_capture("static")
     for k in range(steps):
+        k_now = k + 1
         if arm_on and arm_idx:
             tgt = q0.copy(); tgt[arm_idx] = q0[arm_idx] + amp * math.sin(2 * math.pi * freq * (k + 1) / 50.0); art.apply_action(ArticulationAction(joint_positions=tgt))
         world.step(render=True)
@@ -252,6 +274,8 @@ if not a.freeze:
             drift.append({"t": round((k + 1) / 50.0, 2), "pos_err_m": round(float(np.linalg.norm(np.array(fp, dtype=float) - ap_)), 5), "ang_err_deg": round(float(np.degrees(2 * np.arccos(min(1.0, dq)))), 4)})
         if arm_on and arm_idx and (k % 10 == 0 or k == steps - 1):
             qj = art.get_joint_positions(); arm_log.append({"t": round((k + 1) / 50.0, 2), "q": [round(float(qj[i]), 3) for i in arm_idx]})
+        if k + 1 == moving_k: cam_capture("moving")
+        if k == steps - 1: cam_capture("end")
         if k % 25 == 0 or k == steps - 1:
             p, q = art.get_world_pose(); qd = art.get_joint_velocities(); peak = max(peak, vram()[0]); lows = sorted((aabb(l)[0][2], l.GetName()) for l in links); zmin = lows[0][0]; lowest = lows[0][1]
             series.append({"t": round((k + 1) / 50.0, 2), "base_z": round(float(p[2]), 4), "robot_zmin_minus_floor": round(zmin - floor_z, 4), "tilt_deg": round(tilt(q), 2),
@@ -265,11 +289,22 @@ if not a.freeze:
                                                             "held": bool(max(d["pos_err_m"] for d in drift) < float(FIX.get("hold_tolerance", {}).get("pos_m", 0.005)) and max(d["ang_err_deg"] for d in drift) < float(FIX.get("hold_tolerance", {}).get("ang_deg", 1.0)))}
     if arm_on and arm_idx:
         qs = np.array([r["q"] for r in arm_log]); res["arm_test"] = {"joints": [names[i] for i in arm_idx], "commanded_amplitude_rad": amp, "freq_hz": freq, "observed_range_rad": [round(float(v), 3) for v in (qs.max(0) - qs.min(0))], "moved": bool((qs.max(0) - qs.min(0)).min() > 0.5 * amp), "samples": arm_log[::10]}
+    if cam_on and "static" in cap_frames and "moving" in cap_frames:
+        ver = {}
+        for sp in cam_specs:
+            n = sp["name"]; a0, a1 = cap_frames["static"].get(n), cap_frames["moving"].get(n); st0 = res["cameras"]["captures"]["static"]["stats"][n]; st1 = res["cameras"]["captures"]["moving"]["stats"][n]
+            diff = None if a0 is None or a1 is None else round(float(np.abs(a0.astype(int) - a1.astype(int)).mean()), 2)
+            ver[n] = {"rendered": a0 is not None and st0["std"] is not None and st0["std"] > 2.0, "not_black": st0["dark_frac"] is not None and st0["dark_frac"] < 0.5, "updates_between_poses": diff is not None and diff > 1.0, "mean_abs_diff_static_vs_moving": diff,
+                      "self_occlusion_frac_static": st0.get("self_occlusion_frac"), "self_occlusion_frac_moving": st1.get("self_occlusion_frac"), "depth_min_m_static": st0.get("depth_min_m")}
+            ver[n]["PASS"] = bool(ver[n]["rendered"] and ver[n]["not_black"] and ver[n]["updates_between_poses"] and (ver[n]["self_occlusion_frac_static"] or 0) < 0.15)   # 손: 화면 가장자리 손바닥 셸(2–3 cm) 7–8% 허용, 근거 docs/SETUP.md §10
+        res["cameras"]["verdict"] = ver
     res["balance_observation"] = {"upright_at_end": bool(series[-1]["tilt_deg"] < 20 and series[-1]["base_z"] > floor_z + 0.8 * stand), "note": "성공 기준 아님(균형 제어기 없음, 초기자세 PD 유지뿐)"}
     if vp is not None: shot("after_physics", cam["eye"], cam["target"])
 res["vram_mib"] = {"peak_during_run": peak, "total": vram()[1]}; res["screenshots"] = shots; res["elapsed_s"] = round(time.time() - t0, 1)
 js = os.path.join(a.out, f"igris_vla_scene_{a.tag}.json"); json.dump(res, open(js, "w"), indent=1, default=str); print("RESULT_JSON", js, flush=True)
 if a.hold > 0:                                                                                      # 사용자가 직접 확인: 초기 배치로 되돌려 멈춘 채 창을 열어 둔다(Play로 물리 재생 가능)
-    reset_pose(); world.pause(); set_camera_view(eye=cam["eye"], target=cam["target"], camera_prim_path=cam["prim"]); th = time.time()
+    reset_pose(); world.pause(); set_camera_view(eye=cam["eye"], target=cam["target"], camera_prim_path=cam["prim"])
+    if a.viewport_camera != "scene" and vp is not None and a.viewport_camera in VP_CHOICE: vp.camera_path = VP_CHOICE[a.viewport_camera]; print("[viewport]", VP_CHOICE[a.viewport_camera], flush=True)
+    th = time.time()
     while time.time() - th < a.hold and app.is_running(): app.update()
 app.close()

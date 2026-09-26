@@ -54,23 +54,29 @@ igris:
   fix:                          # 골반 고정(별도 레이어 igris_fix_pelvis.usda). CLI --fix/--no-fix/--fix-link 로 덮어씀
     enabled: true
     hold_tolerance: {pos_m: 0.005, ang_deg: 1.0}   # 사용자 결정(2026-09-19): 팔 동작 중 방향 오차 최대 0.5°는 허용
-    link: auto                  # auto = 양쪽 Joint_Hip_Pitch의 부모(Link_Waist_Pitch, 실제 골반). root = articulation root(base_link = 상체)를 Lab 방식 고정
+    link: root                  # root = articulation root(base_link = 몸통)를 Isaac Lab fix_root_link 방식으로 월드 고정(기본, 2026-09-26). auto = 골반(Link_Waist_Pitch) world 구속
+                                #   골반 고정에서는 몸통이 허리 3관절 PD(kp 660/230/121) 위에 매달려 팔 동작 반력에 앞뒤로 흔들렸음(방향 오차 0.5°) → 몸통 고정으로 제거
   appearance_config: ~/igris_ws/config/igris_appearance.yaml
   cameras_config: ~/igris_ws/config/igris_cameras.yaml          # RGB 카메라 4개 레이어 igris_cameras.usda (CLI --no-cameras, --viewport-camera)   # 외형 override 레이어 igris_appearance.usda (CLI --no-appearance)
-  arm_test:                     # 고정 검증용: 팔 관절 사인파 목표(초기자세 기준). CLI --arm-test
-    enabled: true
+  arm_test:                     # 동작 시험(기본 off: 기본 자세를 덮어쓰지 않음). CLI --arm-test 로 켬
+    enabled: false
     joints: ["Joint_Shoulder_Pitch_(Left|Right)", "Joint_Elbow_Pitch_(Left|Right)", "Joint_Wrist_(Yaw|Roll|Pitch)_(Left|Right)"]   # 카메라 검증: 손목 포함
     amplitude_rad: 0.4
     freq_hz: 0.3
   yaw_offset_deg: 0.0
-  init_joint_pos:               # robros.py init_state.joint_pos
+  init_joint_pos:               # 다리: robros.py init_state. 팔: 팔꿈치를 접어 두 손이 몸 앞에 오는 대칭 자세(2026-09-26; 축·한계는 공식 URDF igris_c_v2_wrist_hand_isaac.urdf)
     ".*_Hip_Pitch_.*": -0.2
     ".*_Knee_Pitch_.*": 0.3
     ".*_Ankle_Pitch_.*": -0.15
-    ".*_Shoulder_Pitch_(Left|Right)": 0.13
-    ".*_Shoulder_Roll_Left": 0.13
-    ".*_Shoulder_Roll_Right": -0.13
-    ".*_Elbow_Pitch_(Left|Right)": -0.3
+    ".*_Shoulder_Pitch_(Left|Right)": -0.35   # axis y, lim [-π, 1.047]: 음수 = 팔 앞으로
+    ".*_Shoulder_Roll_Left": 0.15             # axis x, L lim [-0.175, π]: 양수 = 바깥(벌림)
+    ".*_Shoulder_Roll_Right": -0.15           # R lim [-π, 0.175]: 음수 = 바깥
+    ".*_Shoulder_Yaw_(Left|Right)": 0.0
+    ".*_Elbow_Pitch_(Left|Right)": -1.30      # axis y, lim [-2.094, 0]: 음수 = 굽힘 → 전완이 몸 앞으로
+    ".*_Wrist_Yaw_(Left|Right)": 0.0          # axis z(전완축), lim ±1.571
+    ".*_Wrist_Roll_(Left|Right)": 0.0         # L lim [-1.222, 0.873], R [-0.873, 1.222]
+    ".*_Wrist_Pitch_(Left|Right)": 0.0        # lim ±0.698
+  head_pitch_deg: 30.0          # 고개 숙임. USD의 Joint_Neck_Pitch 는 FixedJoint(DOF 없음, 51 DOF 에 목 미포함) → 별도 레이어에서 고정관절 프레임·링크 xform 을 y축 회전 override. URDF 한계 ±0.5236 rad(=30°)
   pd_gains:                     # robros.py 공식 actuator stiffness/damping → PhysX 위치 드라이브(자세 유지용; 균형 제어기 아님)
     ".*Hip_Pitch.*|.*Knee.*": [118.435253, 15.079645]
     ".*Hip_Roll.*": [122.136354, 10.367256]

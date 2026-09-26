@@ -31,7 +31,7 @@ bash scripts/30_fetch_vla_scene.sh download && bash scripts/30_fetch_vla_scene.s
 bash scripts/30_fetch_vla_scene.sh forget            # gpg-agent 메모리의 암호 캐시 제거
 bash scripts/02_assets_manifest.sh verify            # 추출 자산 포함 84개 SHA-256 대조
 # 7) 기존 환경 + IGRIS-C 1대 (GUI, 5초 물리 후 초기 배치로 되돌려 창 유지)
-bash scripts/run_igris_vla_scene.sh --secs 12 --hold 3600   # 기본: 골반 고정(지지 상태, 균형 제어 아님) + 임시 근사 외형 + RGB 카메라 4개(머리 좌/우 눈, 좌/우 손바닥). 끄기: --no-fix / --no-appearance / --no-cameras / --no-monitor(하단 카메라 모니터)
+bash scripts/run_igris_vla_scene.sh --secs 12 --hold 3600   # 기본: 몸통(base_link) 월드 고정(지지 상태, 균형 제어 아님) + 팔 접은 자세 + 고개 30° 아래 + 임시 근사 외형 + RGB 카메라 4개 + 하단 모니터. 끄기: --no-fix / --no-appearance / --no-cameras / --no-monitor · 동작 시험: --arm-test
 #    카메라 캡처: data/isaac/cameras/<tag>_{static,moving,end}_{head_left,head_right,hand_left,hand_right}.png, *_cam_head_1280x480.png, *_quad_preview.png
 #    설치 확인용 빈 장면: bash scripts/run_isaac_igris.sh --secs 5 --hold 60
 ```
@@ -43,6 +43,8 @@ bash scripts/run_igris_vla_scene.sh --secs 12 --hold 3600   # 기본: 골반 고
 초기 배치(물리 시작 전, 4차 시점·외형 적용 전). 기본 설정은 골반을 월드에 고정한 지지 상태이며, `--no-fix`에서는 제어기가 없어 1–2초 내에 넘어진다.
 
 임시 근사 외형(공식 스킨 아님) 전/후: `docs/img/igris_before_appearance_diag.jpg`, `docs/img/igris_after_appearance_diag.jpg`
+
+기본 자세(몸통 고정·팔 접음·고개 30° 아래) 전체 창: `docs/img/igris_pose_window.jpg`, 측면: `docs/img/igris_pose_side.jpg`
 
 GUI 하단 실시간 모니터(머리 스테레오 L|R · 왼손 · 오른손): `docs/img/igris_monitor_window.jpg`
 

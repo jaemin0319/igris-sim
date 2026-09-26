@@ -1,0 +1,375 @@
+{
+ "run_tag": "pose",
+ "fix": {
+  "fixed_link": "base_link",
+  "mode": "fixed-base articulation (root API moved to parent)",
+  "joint_prim": "/World/envs/env_0/IGRIS_C/base_link/WorldFixedJoint_igris_sim",
+  "hold_check": {
+   "secs": 12.0,
+   "max_pos_err_m": 0.0,
+   "max_ang_err_deg": 0.0,
+   "samples": 61,
+   "tolerance": {
+    "pos_m": 0.005,
+    "ang_deg": 1.0
+   },
+   "held": true
+  }
+ },
+ "head_pitch": {
+  "requested_deg": 30.0,
+  "joint": "/World/envs/env_0/IGRIS_C/joints/Joint_Neck_Pitch",
+  "joint_type": "PhysicsFixedJoint",
+  "link": "/World/envs/env_0/IGRIS_C/Link_Neck_Pitch",
+  "applied_deg": 30.0,
+  "method": "fixed-joint localRot0 + link xformOp:orient override (separate layer)",
+  "urdf_limit_rad": 0.5236
+ },
+ "base_tilt_series": [
+  [
+   0.02,
+   0.0
+  ],
+  [
+   0.52,
+   0.0
+  ],
+  [
+   1.02,
+   0.0
+  ],
+  [
+   1.52,
+   0.0
+  ],
+  [
+   2.02,
+   0.0
+  ],
+  [
+   2.52,
+   0.0
+  ],
+  [
+   3.02,
+   0.0
+  ],
+  [
+   3.52,
+   0.0
+  ],
+  [
+   4.02,
+   0.0
+  ],
+  [
+   4.52,
+   0.0
+  ],
+  [
+   5.02,
+   0.0
+  ],
+  [
+   5.52,
+   0.0
+  ],
+  [
+   6.02,
+   0.0
+  ],
+  [
+   6.52,
+   0.0
+  ],
+  [
+   7.02,
+   0.0
+  ],
+  [
+   7.52,
+   0.0
+  ],
+  [
+   8.02,
+   0.0
+  ],
+  [
+   8.52,
+   0.0
+  ],
+  [
+   9.02,
+   0.0
+  ],
+  [
+   9.52,
+   0.0
+  ],
+  [
+   10.02,
+   0.0
+  ],
+  [
+   10.52,
+   0.0
+  ],
+  [
+   11.02,
+   0.0
+  ],
+  [
+   11.52,
+   0.0
+  ],
+  [
+   12.0,
+   0.0
+  ]
+ ],
+ "self_overlap_check": {
+  "pairs_checked": 320,
+  "aabb_overlaps_over_5mm": [],
+  "count": 0,
+  "note": "AABB 기준(보수적). 0이면 자기 충돌 없음"
+ },
+ "table_overlap_count": 0,
+ "camera_verdict": {
+  "LeftRgbCamera": true,
+  "RightRgbCamera": true,
+  "l_hand_camera_link": true,
+  "l_hand_camera_link_train": true,
+  "r_hand_camera_link": true,
+  "r_hand_camera_link_train": true
+ },
+ "camera_static_stats": {
+  "LeftRgbCamera": {
+   "depth_min_m": 0.3435,
+   "self_occlusion_frac": 0.0,
+   "depth_median_m": 2.855,
+   "dark_frac": 0.0
+  },
+  "RightRgbCamera": {
+   "depth_min_m": 0.3432,
+   "self_occlusion_frac": 0.0,
+   "depth_median_m": 2.855,
+   "dark_frac": 0.0
+  },
+  "l_hand_camera_link": {
+   "depth_min_m": 0.0115,
+   "self_occlusion_frac": 0.171,
+   "depth_median_m": 0.271,
+   "dark_frac": 0.059
+  },
+  "l_hand_camera_link_train": {
+   "depth_min_m": 0.0115,
+   "self_occlusion_frac": 0.145,
+   "depth_median_m": 0.268,
+   "dark_frac": 0.075
+  },
+  "r_hand_camera_link": {
+   "depth_min_m": 0.0113,
+   "self_occlusion_frac": 0.2,
+   "depth_median_m": 0.258,
+   "dark_frac": 0.067
+  },
+  "r_hand_camera_link_train": {
+   "depth_min_m": 0.0112,
+   "self_occlusion_frac": 0.17,
+   "depth_median_m": 0.256,
+   "dark_frac": 0.083
+  }
+ },
+ "landmark_pixels": {
+  "LeftRgbCamera": {
+   "mug": {
+    "u": 399.8,
+    "v": 711.2,
+    "depth_m": 0.378,
+    "in_image": false
+   },
+   "table": {
+    "u": 501.6,
+    "v": 714.3,
+    "depth_m": 1.068,
+    "in_image": false
+   },
+   "l_index_tip": {
+    "u": 263.1,
+    "v": 321.8,
+    "depth_m": 0.521,
+    "in_image": true
+   },
+   "l_thumb_tip": {
+    "u": 256.0,
+    "v": 331.9,
+    "depth_m": 0.421,
+    "in_image": true
+   },
+   "left_hand": {
+    "u": 221.8,
+    "v": 439.9,
+    "depth_m": 0.413,
+    "in_image": true
+   },
+   "r_index_tip": {
+    "u": 691.7,
+    "v": 342.6,
+    "depth_m": 0.415,
+    "in_image": false
+   },
+   "r_thumb_tip": {
+    "u": 718.4,
+    "v": 357.2,
+    "depth_m": 0.33,
+    "in_image": false
+   },
+   "right_hand": {
+    "u": 780.0,
+    "v": 507.9,
+    "depth_m": 0.308,
+    "in_image": false
+   }
+  },
+  "RightRgbCamera": {
+   "mug": {
+    "u": 116.0,
+    "v": 743.4,
+    "depth_m": 0.354,
+    "in_image": false
+   },
+   "table": {
+    "u": 260.5,
+    "v": 684.1,
+    "depth_m": 1.141,
+    "in_image": false
+   },
+   "l_index_tip": {
+    "u": -51.1,
+    "v": 342.6,
+    "depth_m": 0.415,
+    "in_image": false
+   },
+   "l_thumb_tip": {
+    "u": -78.2,
+    "v": 357.3,
+    "depth_m": 0.33,
+    "in_image": false
+   },
+   "left_hand": {
+    "u": -140.0,
+    "v": 507.9,
+    "depth_m": 0.308,
+    "in_image": false
+   },
+   "r_index_tip": {
+    "u": 377.3,
+    "v": 321.7,
+    "depth_m": 0.521,
+    "in_image": true
+   },
+   "r_thumb_tip": {
+    "u": 384.1,
+    "v": 331.9,
+    "depth_m": 0.421,
+    "in_image": true
+   },
+   "right_hand": {
+    "u": 418.2,
+    "v": 439.9,
+    "depth_m": 0.413,
+    "in_image": true
+   }
+  },
+  "l_hand_camera_link": {
+   "mug": {
+    "behind": true
+   },
+   "table": {
+    "behind": true
+   },
+   "l_index_tip": {
+    "u": 123.0,
+    "v": 252.2,
+    "depth_m": 0.067,
+    "in_image": false
+   },
+   "l_thumb_tip": {
+    "u": 0.5,
+    "v": 120.1,
+    "depth_m": 0.063,
+    "in_image": true
+   },
+   "left_hand": {
+    "behind": true
+   },
+   "r_index_tip": {
+    "u": 186.2,
+    "v": 39.1,
+    "depth_m": 0.383,
+    "in_image": true
+   },
+   "r_thumb_tip": {
+    "u": 162.3,
+    "v": 17.7,
+    "depth_m": 0.335,
+    "in_image": true
+   },
+   "right_hand": {
+    "u": 188.7,
+    "v": -23.0,
+    "depth_m": 0.289,
+    "in_image": false
+   }
+  },
+  "r_hand_camera_link": {
+   "mug": {
+    "u": -425.3,
+    "v": -798.8,
+    "depth_m": 0.037,
+    "in_image": false
+   },
+   "table": {
+    "behind": true
+   },
+   "l_index_tip": {
+    "u": 130.7,
+    "v": 34.1,
+    "depth_m": 0.383,
+    "in_image": true
+   },
+   "l_thumb_tip": {
+    "u": 154.6,
+    "v": 12.7,
+    "depth_m": 0.335,
+    "in_image": true
+   },
+   "left_hand": {
+    "u": 128.2,
+    "v": -27.9,
+    "depth_m": 0.289,
+    "in_image": false
+   },
+   "r_index_tip": {
+    "u": 194.2,
+    "v": 247.9,
+    "depth_m": 0.067,
+    "in_image": false
+   },
+   "r_thumb_tip": {
+    "u": 316.1,
+    "v": 115.2,
+    "depth_m": 0.063,
+    "in_image": true
+   },
+   "right_hand": {
+    "behind": true
+   }
+  }
+ },
+ "monitor": "NOT TESTED (arm_test off; --arm-test 로 재생 갱신 검증)",
+ "vram_mib": {
+  "peak_during_run": 3912,
+  "total": 8188
+ }
+}

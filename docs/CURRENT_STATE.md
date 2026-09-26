@@ -1,6 +1,31 @@
-# CURRENT STATE — 2026-09-26 (7차 갱신: GUI 하단 카메라 모니터)
+# CURRENT STATE — 2026-09-26 (8차 갱신: 몸통 고정 + 기본 자세 + 고개 숙임)
 
 판정: PASS / FAIL / BLOCKED / NOT TESTED. 로그: `~/igris_ws/logs/`, 결과: `~/igris_ws/data/isaac/`(Git 제외), 요약본: `docs/results/`, 미리보기: `docs/img/`.
+
+## 8차 — 몸통(base_link) 월드 고정, 팔 접은 대칭 자세, 고개 30° 아래
+
+실행: `bash ~/igris_ws/scripts/run_igris_vla_scene.sh --secs 12 --hold 3600` · 동작 시험은 `--arm-test`(기본 off, 기본 자세를 덮어쓰지 않음)
+
+| 항목 | 판정 | 근거 |
+| --- | --- | --- |
+| 흔들림 원인: 골반(`Link_Waist_Pitch`) world 구속 상태에서 몸통(articulation root, ≈13 kg+팔)이 허리 3관절 PD(kp 660/230/121) 위에 매달려 팔 반력에 앞뒤로 기움(6차 팔 동작 중 몸통 tilt 최대 5.9°). 7차까지 보고한 "0.50°"는 앵커 쿼터니언 4자리 반올림이 만든 가짜 오차(수정) | PASS(원인) | docs/results/igris_vla_scene_fix_appearance.json, 코드 주석 |
+| 고정 변경: `fix.link: root` → `base_link`(몸통)를 Isaac Lab fix_root_link 방식(루트 API를 부모로 이동 + FixedJoint)으로 고정. 골반 구속은 생성하지 않음(고정 관절 1개, 중복 없음). 레이어 `igris_fix_base.usda`, 공식 USD 무수정 | PASS | docs/results/igris_pose.json `fix` |
+| 안정성: 12초 물리 동안 몸통 위치 오차 0.00 mm, 방향 오차 0.00°, tilt 0.0° 전 구간 | PASS | 〃 `hold_check`, `base_tilt_series` |
+| 팔 자세(공식 URDF 축·한계 확인): 어깨 pitch −0.35 rad(axis y, 음수=앞), 어깨 roll L +0.15 / R −0.15(바깥), 어깨 yaw 0, 팔꿈치 −1.30 rad(axis y, lim [−2.094, 0], 음수=굽힘), 손목 yaw/roll/pitch 0 → 두 손이 몸 앞 어깨 폭, 전완 수평 | PASS | config/vla_scene.yaml `init_joint_pos`, docs/img/igris_pose_side.jpg |
+| 손바닥 방향(화면 검증): 손바닥 카메라에 반대쪽 손(엄지·검지 끝 `in_image=True`, 0.33–0.38 m)과 작업대 상판이 보임 → 손바닥이 서로 마주보며 아래쪽을 향함 | PASS(관찰) | 〃 `landmark_pixels`, docs/img/igris_pose_cameras_quad.jpg |
+| 자기 충돌: 손·손목·팔꿈치·손가락 링크 vs 몸통·허리·고관절 링크 AABB 겹침 0건, 작업대와 링크 겹침 0건, 12초 물리 유한 | PASS | 〃 `self_overlap_check` |
+| 고개 숙임: USD의 `Joint_Neck_Pitch`·`Joint_Neck_Yaw`는 **FixedJoint(DOF 없음, 51 DOF에 목 미포함)** → 관절 목표로는 불가. 별도 레이어 `igris_head_pose.usda`에서 고정관절 `localRot0`와 `Link_Neck_Pitch` xform을 y축 +30°(x 전방 기준 아래) 동일 회전 override. URDF 한계 ±0.5236 rad(=30°) 이내 | PASS(30° 적용) | 〃 `head_pitch` |
+| 머리 카메라 시야: 작업대 상판·양손이 화면 하반부에 들어옴(카메라 최소 깊이 0.34 m = 손). 머그는 얼굴 바로 아래(v≈711 px, 화면 밖) → 머그까지 보려면 약 45° 이상 필요(USD 고정관절 override라 각도는 임의 가능하나 실기 한계 30° 초과) | PASS(작업대) / 머그 미포함 | 〃 `landmark_pixels` |
+| 카메라 4개·하단 모니터 유지, 전체 창 스크린샷 | PASS | data/isaac/monitor/pose_window_pose.png, docs/img/igris_pose_window.jpg |
+| 손바닥 카메라 자기 메시(<3 cm) 17–20%(접힌 자세에서 손바닥 셸 가장자리; 임계 25%로 기록) | 관찰 | 〃 `camera_static_stats` |
+
+### 미검증
+- 모니터 재생 갱신 검증은 `--arm-test` 없이는 NOT TESTED(정지 자세에서는 영상 변화가 없으므로). `--arm-test` 실행 시 7차와 동일 검증 수행.
+- 실기의 목 pitch 방향 부호·범위(URDF 값만 참조). 실기 팔 자세와의 비교.
+
+---
+
+(이하 7차 갱신 기록)
 
 ## 7차 — Isaac Sim 한 창 안 하단 실시간 모니터 [HEAD STEREO (L|R)] [LEFT HAND] [RIGHT HAND]
 

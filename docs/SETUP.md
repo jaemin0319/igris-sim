@@ -75,7 +75,7 @@ ISAAC_ROOT=/mnt/isaac bash ~/igris_ws/scripts/20_install_isaac.sh          # ver
 # 기존 환경 자산(암호는 pinentry 창에만): download → list → extract → forget
 bash ~/igris_ws/scripts/30_fetch_vla_scene.sh download|list|extract|forget
 # ★ 기존 환경 + IGRIS-C 1대(GUI 유지)
-bash ~/igris_ws/scripts/run_igris_vla_scene.sh --secs 12 --hold 3600      # 기본: 골반 고정 on + 임시 외형 on + RGB 카메라 4개 on + 팔·손목 동작 시험
+bash ~/igris_ws/scripts/run_igris_vla_scene.sh --secs 12 --hold 3600      # 기본: 몸통(base_link) 고정 + 팔 접은 자세 + 고개 30° 아래 + 임시 외형 + RGB 카메라 4개 + 하단 모니터. 동작 시험은 --arm-test
 #   하단 실시간 모니터 [HEAD STEREO (L|R)] [LEFT HAND] [RIGHT HAND] 기본 표시(scripts/isaac/igris_monitor.py) · 끄기: --no-monitor
 #   카메라 옵션: --no-cameras · --viewport-camera head_left|head_right|hand_left|hand_right|scene (hold 중 GUI 뷰포트) · 캡처: data/isaac/cameras/<tag>_{static,moving,end}_*.png
 #   옵션: --no-fix(고정 해제, 제어기 없어 넘어짐) · --fix-link root(상체 base_link를 고정 베이스로) · --no-appearance(공식 USD의 흰색 그대로) · --headless
@@ -123,7 +123,7 @@ bash ~/igris_ws/scripts/run_igris_vla_scene.sh --secs 12 --hold 3600      # 기�
 
 | 레이어 | 설정 | 내용 | 끄기 |
 | --- | --- | --- | --- |
-| `igris_fix_pelvis.usda` | `config/vla_scene.yaml` → `igris.fix {enabled, link, hold_tolerance}` | 현재 자세의 월드 포즈에 world→링크 FixedJoint. `link: auto` = 양쪽 Joint_Hip_Pitch의 부모(`Link_Waist_Pitch`, 실제 골반; articulation 밖 구속). `root` = `base_link`(상체)를 Isaac Lab `fix_root_link` 방식(루트 API를 부모로 이동)으로 고정 | `--no-fix` 또는 `enabled: false` |
+| `igris_fix_base.usda` | `config/vla_scene.yaml` → `igris.fix {enabled, link, hold_tolerance}` (기본 `link: root`) | 현재 자세의 월드 포즈에 world→링크 FixedJoint. `link: auto` = 양쪽 Joint_Hip_Pitch의 부모(`Link_Waist_Pitch`, 실제 골반; articulation 밖 구속). `root` = `base_link`(상체)를 Isaac Lab `fix_root_link` 방식(루트 API를 부모로 이동)으로 고정 | `--no-fix` 또는 `enabled: false` |
 | `igris_appearance.usda` | `config/igris_appearance.yaml` | 링크 `visuals` 스코프에 UsdPreviewSurface를 strongerThanDescendants로 바인딩(렌더링 전용) | `--no-appearance` 또는 `enabled: false` |
 
 - 골반 고정은 **지지 상태**(균형 제어 아님). 검증: 12초, 위치 0.00mm·방향 ≤0.50°(허용치 1.0°), 팔 4관절 사인파 추종 확인(`igris.arm_test`).
@@ -145,3 +145,10 @@ bash ~/igris_ws/scripts/run_igris_vla_scene.sh --secs 12 --hold 3600      # 기�
 - 내부 파라미터 → USD: focalLength 24, horizontalAperture = 24·W/fx, verticalAperture = 24·H/fy; 손은 `Camera.set_opencv_pinhole_properties(cx, cy, fx, fy, [k1..k3])`(OmniLensDistortionOpenCvPinholeAPI, 공식 camera_cfg.py와 같은 스키마)로 주점·왜곡 적용. 회전은 공식 규약(ros/world)을 USD 카메라(−z 전방, +y 상)로 변환(`igris_cameras.conv_to_usd`).
 - 출력: 공식 4개 + `cam_head` 1280×480(좌|우 hstack; `lerobot_robot_igris` view=left가 `frame[:, :640]`이므로 좌안이 왼쪽) + 손 학습용 `train_extend` 640×480(`l_hand_camera_link_train`, `r_…_train` prim; fx,fy,cx,cy ×2, cy+40; 수평 FOV 108.3° 동일, 수직 81.7°→92.2°, 상하 40 px는 보정 범위 밖 외삽). `letterbox`(640×400 렌더+상하 검은 띠)와 `none`은 YAML `train_output.mode`.
 - 검증 지표(결과 JSON `cameras.verdict`): rendered(std>2), not_black(어두운 화소<50%), updates_between_poses(정지↔동작 평균 절대차>1), self_occlusion_frac(<3 cm 화소)<15%. 랜드마크(손가락 끝·머그·작업대) 화소 투영 `landmark_pixels`로 방향 확인.
+
+## 11. 기본 자세·몸통 고정·고개 (8차, config/vla_scene.yaml `igris`)
+
+- 고정: `fix.link: root` → `base_link`(몸통, articulation root) 고정 베이스(레이어 `igris_fix_base.usda`). `auto`는 골반 구속(흔들림 있음). 둘 중 하나만 생성.
+- 팔: `init_joint_pos` 어깨 pitch −0.35 / roll ±0.15(바깥) / yaw 0, 팔꿈치 −1.30, 손목 0 (축·한계: 공식 URDF `igris_c_v2_wrist_hand_isaac.urdf`).
+- 고개: `head_pitch_deg: 30` → 레이어 `igris_head_pose.usda`(Joint_Neck_Pitch는 FixedJoint라 관절 목표 불가; 관절 프레임+링크 xform 회전 override). 0이면 레이어 미생성.
+- `arm_test.enabled: false` 기본. `--arm-test`로 사인파 동작·모니터 갱신 검증.

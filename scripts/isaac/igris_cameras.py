@@ -26,8 +26,13 @@ def build_specs(cfg):
                           axial_offset_m=h["axial_offset_m"], rot_conv=[round(v, 6) for v in rot], convention=h["convention"], q_usd=[round(float(v), 6) for v in q], optical_axis_link=[round(float(v), 4) for v in d], output="official"))
     tr = cfg["hands"].get("train_output", {"mode": "none"})
     for side in ("left", "right"):
-        h = cfg["hands"][side]; rot = tuple(h["rot"]); q, d = conv_to_usd(rot, h["convention"]); pos = np.array(h["official_pos"]) + h["axial_offset_m"]*d
-        base = dict(role=f"hand_{side}", link=h["link"], clip=list(h["clipping"]), official_pos=list(h["official_pos"]), pos=[round(float(v), 6) for v in pos], axial_offset_m=h["axial_offset_m"], rot_conv=[round(v, 6) for v in rot], convention=h["convention"], q_usd=[round(float(v), 6) for v in q], optical_axis_link=[round(float(v), 4) for v in d], dist=list(h["distortion"]))
+        h = cfg["hands"][side]; rot = tuple(h["rot"])
+        tp, ty = float(h.get("tilt_pitch_deg", 0.0)), float(h.get("tilt_yaw_deg", 0.0))          # 광축 기울임(카메라 자체 축, world 규약: pitch=y축(+아래), yaw=z축(+왼쪽)). 기본 0 = 공식
+        if tp: rot = qmul(rot, axis_angle((0, 1, 0), tp))
+        if ty: rot = qmul(rot, axis_angle((0, 0, 1), ty))
+        q, d = conv_to_usd(rot, h["convention"]); pos = np.array(h["official_pos"]) + h["axial_offset_m"]*d
+        q_rel = qmul((rot[0], -rot[1], -rot[2], -rot[3]), tuple(h["rot"])); dev = {"pos_mm": round(float(np.linalg.norm(pos - np.array(h["official_pos"]))*1000), 1), "rot_deg": round(float(np.degrees(2*np.arccos(min(1.0, abs(q_rel[0]))))), 2)}
+        base = dict(role=f"hand_{side}", link=h["link"], clip=list(h["clipping"]), official_pos=list(h["official_pos"]), official_rot=list(h["rot"]), pos=[round(float(v), 6) for v in pos], axial_offset_m=h["axial_offset_m"], tilt_pitch_deg=tp, tilt_yaw_deg=ty, deviation_from_official=dev, rot_conv=[round(v, 6) for v in rot], convention=h["convention"], q_usd=[round(float(v), 6) for v in q], optical_axis_link=[round(float(v), 4) for v in d], dist=list(h["distortion"]))
         specs.append(dict(base, name=h["prim"], W=h["width"], H=h["height"], intr=list(h["intrinsic"]), output="official"))
         if tr.get("mode", "none") != "none":
             fx, fy, cx, cy = h["intrinsic"]; s = tr["width"]/h["width"]; Wt, Ht = tr["width"], tr["height"]
@@ -36,6 +41,18 @@ def build_specs(cfg):
             specs.append(dict(base, name=f'{h["prim"]}_train', W=Wt, H=Hr, intr=[round(v, 4) for v in intr], output=f'train_{tr["mode"]}', pad_to=(Wt, Ht), dataset_key=tr["names"][side]))
     for s in specs: s["hfov_deg"], s["vfov_deg"] = fov(s["intr"][0], s["intr"][1], s["W"], s["H"])
     return specs
+def variant_specs(cfg, variants):
+    """튜닝 스윕용: variants=[{"name":..., "hands": {공통 override} 또는 {"left":{...},"right":{...}}}] → 공식 해상도 손 카메라 spec 추가(prim 이름에 _<name> 접미)"""
+    import copy
+    out = []
+    for v in variants:
+        c = copy.deepcopy(cfg); hv = v.get("hands", {})
+        for side in ("left", "right"):
+            ov = hv.get(side, {k: x for k, x in hv.items() if k not in ("left", "right")}); c["hands"][side].update(ov); c["hands"][side]["prim"] = f'{cfg["hands"][side]["prim"]}_{v["name"]}'
+        c["hands"]["train_output"] = {"mode": "none"}
+        for sp in build_specs(c):
+            if sp["role"].startswith("hand"): sp["variant"] = v["name"]; sp["role"] = f'{sp["role"]}@{v["name"]}'; out.append(sp)
+    return out
 def author(stage, layer, robot_path, specs):
     """카메라 prim을 링크 자식으로 작성(레이어 layer). 내부 파라미터 → focalLength 24 + aperture. cx,cy 오프셋은 OpenCV pinhole API(센서 생성 시)로 준다."""
     with Usd.EditContext(stage, Usd.EditTarget(layer)):
@@ -64,7 +81,9 @@ def capture(sensors, specs, self_occ_m=0.03):
         cam = sensors[s["name"]]; rgba = cam.get_rgba(); fr = cam.get_current_frame(); depth = fr.get("distance_to_image_plane")
         rgb = np.asarray(rgba)[..., :3].copy() if rgba is not None and np.asarray(rgba).size else None; d = np.asarray(depth) if depth is not None and np.asarray(depth).size else None
         st = {"shape": None if rgb is None else list(rgb.shape), "mean": None if rgb is None else round(float(rgb.mean()), 1), "std": None if rgb is None else round(float(rgb.std()), 1), "dark_frac": None if rgb is None else round(float((rgb.max(-1) < 8).mean()), 3)}
-        if d is not None and d.size: fin = np.isfinite(d); st["depth_min_m"] = round(float(d[fin].min()), 4) if fin.any() else None; st["self_occlusion_frac"] = round(float((d[fin] < self_occ_m).mean()), 3) if fin.any() else None; st["depth_median_m"] = round(float(np.median(d[fin])), 3) if fin.any() else None
+        if d is not None and d.size:
+            fin = np.isfinite(d); st["depth_min_m"] = round(float(d[fin].min()), 4) if fin.any() else None; st["self_occlusion_frac"] = round(float((d[fin] < self_occ_m).mean()), 3) if fin.any() else None; st["depth_median_m"] = round(float(np.median(d[fin])), 3) if fin.any() else None
+            if fin.any(): dd = d[fin]; st["depth_bins"] = {"lt_0.03": round(float((dd < 0.03).mean()), 3), "0.03_0.10": round(float(((dd >= 0.03) & (dd < 0.10)).mean()), 3), "0.10_1.5": round(float(((dd >= 0.10) & (dd < 1.5)).mean()), 3), "ge_1.5": round(float((dd >= 1.5).mean()), 3), "invalid": round(float(1 - fin.mean()), 3)}
         st["_depth"] = d; frames[s["name"]] = (rgb, st)
     return frames
 def project_points(stage, spec, names_paths, robot_path):
@@ -87,12 +106,16 @@ def save(frames, specs, out, tag, cfg):
         if rgb is None: continue
         if s.get("pad_to") and tuple(rgb.shape[1::-1]) != tuple(s["pad_to"]):
             Wt, Ht = s["pad_to"]; pad = np.zeros((Ht, Wt, 3), np.uint8); y0 = (Ht - rgb.shape[0])//2; pad[y0:y0+rgb.shape[0], :rgb.shape[1]] = rgb; rgb = pad
-        imgs[s["name"]] = rgb; f = os.path.join(out, f'{tag}_{s["role"]}{"" if s["output"] == "official" else "_" + s["output"]}.png'); Image.fromarray(rgb).save(f); files[s["name"]] = f
+        imgs[s["name"]] = rgb; f = os.path.join(out, f'{tag}_{s["role"].replace("@", "_")}{"" if s["output"] == "official" else "_" + s["output"]}.png'); Image.fromarray(rgb).save(f); files[s["name"]] = f
         dep = frames[s["name"]][1].get("_depth")
         if dep is not None and s["output"] == "official" and s["role"].startswith("hand"):
             dv = np.clip(dep, 0, 0.3)/0.3; dimg = (255*(1-dv)).astype(np.uint8); dimg[~np.isfinite(dep)] = 0; dimg = np.stack([dimg]*3, -1); dimg[(dep < 0.03) & np.isfinite(dep)] = (255, 0, 0)   # 빨강 = 3 cm 이내(자기 메시)
             fd = f.replace(".png", "_depth.png"); Image.fromarray(dimg).save(fd); files[s["name"] + "_depth"] = fd
     hl, hr = [x for x in specs if x["role"] == "head_left"][0]["name"], [x for x in specs if x["role"] == "head_right"][0]["name"]
+    for s in specs:  # 변형 카메라 깊이 PNG
+        rgb, stt = frames[s["name"]]; dep = stt.get("_depth")
+        if "@" in s["role"] and dep is not None and s["name"] in files:
+            dv = np.clip(dep, 0, 0.3)/0.3; dimg = (255*(1-dv)).astype(np.uint8); dimg[~np.isfinite(dep)] = 0; dimg = np.stack([dimg]*3, -1); dimg[(dep < 0.03) & np.isfinite(dep)] = (255, 0, 0); fd = files[s["name"]].replace(".png", "_depth.png"); Image.fromarray(dimg).save(fd); files[s["name"] + "_depth"] = fd
     if hl in imgs and hr in imgs:
         f = os.path.join(out, f'{tag}_{cfg["head"].get("stereo_output", "cam_head")}_1280x480.png'); Image.fromarray(np.hstack([imgs[hl], imgs[hr]])).save(f); files["cam_head"] = f
     quad = [n for n in (hl, hr, [x for x in specs if x["role"] == "hand_left" and x["output"] == "official"][0]["name"], [x for x in specs if x["role"] == "hand_right" and x["output"] == "official"][0]["name"]) if n in imgs]

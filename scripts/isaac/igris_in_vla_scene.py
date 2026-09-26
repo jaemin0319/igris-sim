@@ -22,6 +22,9 @@ ap.add_argument("--viewport-camera", default="scene", help="GUI viewport: scene 
 ap.add_argument("--no-monitor", dest="monitor", action="store_false", default=True, help="아래쪽 [머리 스테레오][왼손][오른손] 실시간 모니터 끄기(GUI 전용)")
 ap.add_argument("--pose-file", default=None, help="데이터셋 자세 JSON({names, poses:[{label, state{name:rad}}]})를 순서대로 재현하며 카메라 캡처(진단용; 설정 불변)")
 ap.add_argument("--head-pitch", type=float, default=None, help="이번 실행에서만 head_pitch_deg 를 덮어씀(YAML 기본값 불변, 진단용)")
+ap.add_argument("--cam-variants", default=None, help='튜닝 스윕: JSON 목록 [{"name":"off20","hands":{"axial_offset_m":0.02}}, ...] → 손 카메라 변형을 추가 생성해 함께 캡처(기본 카메라 불변)')
+ap.add_argument("--cam-override", default=None, help='이번 실행에서만 카메라 YAML 일부를 덮어씀(JSON, 예 {"hands":{"left":{"axial_offset_m":0.02}}})')
+ap.add_argument("--xy-offset", default=None, help="이번 실행에서만 igris.xy_offset 을 덮어씀: 'x,y' (m)")
 a = ap.parse_args(); os.makedirs(a.out, exist_ok=True)
 import yaml
 cfg = yaml.safe_load(open(a.config))
@@ -115,6 +118,7 @@ def new_sublayer(name):  # 별도 override 레이어(파일) — 루트 장면 �
     path = os.path.join(scene_dir, name); os.path.exists(path) and os.remove(path); L = Sdf.Layer.CreateNew(path); stage.GetRootLayer().subLayerPaths.append(path); return L
 res["layers"] = {}
 w, x, y, z = [float(v) for v in g1["rot"]]; yaw = math.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z)) + math.radians(float(ig.get("yaw_offset_deg", 0.0))); qyaw = (math.cos(yaw / 2), 0.0, 0.0, math.sin(yaw / 2))
+if a.xy_offset: ig["xy_offset"] = [float(v) for v in a.xy_offset.split(",")]; res["xy_offset_override"] = ig["xy_offset"]
 gx, gy = float(g1["pos"][0]) + float(ig["xy_offset"][0]), float(g1["pos"][1]) + float(ig["xy_offset"][1])
 place(robot, (gx, gy, 50.0), qyaw)                                                                 # 바닥 측정 전까지 raycast 경로 밖에 둔다
 cam = cfg["scene_camera"]; camera = UsdGeom.Camera.Define(stage, Sdf.Path(cam["prim"])); camera.CreateFocalLengthAttr(float(cam.get("focal_length", 18.0)))
@@ -191,9 +195,15 @@ if not app_on: stage.MuteLayer(appL.identifier)
 # ---- (레이어 3) RGB 카메라 4개: 링크 자식 Camera prim (config/igris_cameras.yaml)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import igris_cameras as IC
 CAMCFG = yaml.safe_load(open(os.path.expanduser(ig.get("cameras_config", "~/igris_ws/config/igris_cameras.yaml")))); cam_on = CAMCFG.get("enabled", True) if a.cameras is None else a.cameras
+if a.cam_override:
+    def _deep(dst, src):
+        for k, v in src.items(): (_deep(dst.setdefault(k, {}), v) if isinstance(v, dict) else dst.__setitem__(k, v))
+    _deep(CAMCFG, json.loads(a.cam_override)); res["cam_override"] = json.loads(a.cam_override)
 cam_specs = []; cam_sensors = {}
 if cam_on:
-    camL = new_sublayer("igris_cameras.usda"); res["layers"]["cameras"] = camL.identifier; cam_specs = IC.author(stage, camL, ig["prim"], IC.build_specs(CAMCFG))
+    _specs = IC.build_specs(CAMCFG)
+    if a.cam_variants: _specs += IC.variant_specs(CAMCFG, json.loads(a.cam_variants)); res["cam_variants"] = json.loads(a.cam_variants)
+    camL = new_sublayer("igris_cameras.usda"); res["layers"]["cameras"] = camL.identifier; cam_specs = IC.author(stage, camL, ig["prim"], _specs)
 res["placement"] = {"g1_slot_pos": g1["pos"], "g1_slot_rot_wxyz": g1["rot"], "igris_base_pos": [gx, gy, round(base_z, 4)], "igris_yaw_deg": round(math.degrees(yaw), 2),
                     "rule": "x,y,yaw from G1 slot (+xy_offset); z = floor_z(raycast) + standing_base_height + clearance (G1 z not copied)"}
 scene_usda = os.path.join(scene_dir, "igris_in_vla_scene.usda"); stage.GetRootLayer().Export(scene_usda); res["scene_layer"] = scene_usda
@@ -349,9 +359,10 @@ if a.pose_file and cam_on:                                                      
         for _ in range(25): world.step(render=True); mon()
         qm = art.get_joint_positions(); err = max(abs(float(qm[names.index(j)]) - v) for j, v in applied.items()) if applied else None
         fr = IC.capture(cam_sensors, cam_specs, 0.03); files = IC.save(fr, cam_specs, pose_dir, f'ep{pz["episode"]}_{pz["label"]}_f{pz["index"]}', CAMCFG)
-        pose_log.append({"episode": pz["episode"], "label": pz["label"], "dataset_index": pz["index"], "applied_joints": len(applied), "max_joint_err_rad": None if err is None else round(err, 4), "files": {k: os.path.basename(v) for k, v in files.items()}, "stats": {n: {k: v for k, v in st.items() if k != "_depth"} for n, (_, st) in fr.items()}})
+        xc_ = UsdGeom.XformCache(Usd.TimeCode.Default()); hand_pos = {hn: [round(float(v), 3) for v in np.array(xc_.GetLocalToWorldTransform(stage.GetPrimAtPath(f'{ig["prim"]}/{hn}'))).T[:3, 3]] for hn in ("Left_Hand", "Right_Hand")}
+        pose_log.append({"episode": pz["episode"], "label": pz["label"], "dataset_index": pz["index"], "applied_joints": len(applied), "max_joint_err_rad": None if err is None else round(err, 4), "hand_world_pos": hand_pos, "files": {k: os.path.basename(v) for k, v in files.items()}, "stats": {n: {k: v for k, v in st.items() if k != "_depth"} for n, (_, st) in fr.items()}})
     world.pause(); reset_pose()
-    res["dataset_pose_capture"] = {"pose_file": a.pose_file, "head_pitch_deg": HP, "joint_map": DS2ISAAC, "unmapped_dataset_joints": unmapped, "poses": pose_log, "dir": pose_dir}; json.dump(res, open(js, "w"), indent=1, default=str); print("[pose_capture]", len(pose_log), "poses ->", pose_dir, flush=True)
+    res["dataset_pose_capture"] = {"pose_file": a.pose_file, "head_pitch_deg": HP, "table_aabb": aabb(stage.GetPrimAtPath(cfg["environment"][0]["prim"])), "robot_xy": [gx, gy], "joint_map": DS2ISAAC, "unmapped_dataset_joints": unmapped, "poses": pose_log, "dir": pose_dir}; json.dump(res, open(js, "w"), indent=1, default=str); print("[pose_capture]", len(pose_log), "poses ->", pose_dir, flush=True)
 if a.hold > 0:                                                                                      # 사용자가 직접 확인: 초기 배치로 되돌려 멈춘 채 창을 열어 둔다(Play로 물리 재생 가능)
     reset_pose(); world.pause(); set_camera_view(eye=cam["eye"], target=cam["target"], camera_prim_path=cam["prim"])
     if a.viewport_camera != "scene" and vp is not None and a.viewport_camera in VP_CHOICE: vp.camera_path = VP_CHOICE[a.viewport_camera]; print("[viewport]", VP_CHOICE[a.viewport_camera], flush=True)

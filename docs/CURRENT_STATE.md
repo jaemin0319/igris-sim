@@ -1,6 +1,24 @@
-# CURRENT STATE — 2026-09-26 (10차 갱신: 데이터셋 vs 시뮬 카메라 진단)
+# CURRENT STATE — 2026-09-26 (11차 갱신: 1차 튜닝 — 손 카메라·거리)
 
 판정: PASS / FAIL / BLOCKED / NOT TESTED. 로그: `~/igris_ws/logs/`, 결과: `~/igris_ws/data/isaac/`(Git 제외), 요약본: `docs/results/`, 미리보기: `docs/img/`.
+
+## 11차 — 1차 튜닝 (기준: 동일 15자세, 회전 없는 원본 프레임) — 상세: docs/DATASET_SIM_CAMERA_DIAGNOSIS.md 하단 "1차 튜닝 결과"
+
+| 항목 | 판정 | 근거 |
+| --- | --- | --- |
+| 가림 원인: 왼손=손바닥 셸 테두리+휴식 자세의 손바닥면, 오른손=휴식 자세(15자세 모두)에서 손가락·손바닥 셸 사이와 허벅지 | PASS(확인) | data/isaac/dataset_poses/sweepA/*_depth.png |
+| 후보 18개 스윕(+20/30 mm, pitch/yaw ±20/±40°, 조합) × 15자세, 공식 대비 편차 기록 | PASS | docs/results/hand_camera_tuning.json |
+| **왼손 `tilt_yaw_deg: -20` 적용**(편차 20°/+10 mm): 자기 메시 0%(최대 0%), 작업공간 84%(최소 62%), 휴식=천장·전방=작업대 방향 | PASS(적용, 재실행 확인 `tuned`) | docs/img/tuning/hand_left_before_after.jpg |
+| 오른손: 공식 유지(어느 후보도 <17% 가림·>25% 작업공간을 못 넘음, 데이터셋에 오른팔 동작 없음), 손목 부호 미수정(증거 없음) | NOT VERIFIED → 미변경 | docs/img/tuning/hand_right_before_after.jpg |
+| 거리: 0.15 m(현재)/0.25/0.40 비교. 0.40은 쥐기 자세 손이 모서리 앞(기각). 0.15·0.25 모두 가능, 머리 영상 차이 미미 → **현재값 유지**(이전 "0.4–0.5 m" 추정은 광각 효과로 과대) | PASS(비교) / 변경 없음 | docs/img/tuning/distance_head.jpg |
+| 머리/손 화각·왜곡, 목 30° | 변경 없음(실기 파라미터 없음) | — |
+
+### 남은 불확실성
+실기 손 카메라 장착 방향(왼손 값은 시뮬 가림 기준), 오른손 전반, 실기 내부 파라미터, 손가락 자세 매핑. 다음: 소품 배치(거리 확정 후), 오른손은 오른팔 동작 데이터 확보 후.
+
+---
+
+(이하 10차 갱신 기록)
 
 ## 10차 — igris_c_trainer sample_dataset 영상 vs 시뮬 카메라 비교·진단 (설정 변경 없음)
 
